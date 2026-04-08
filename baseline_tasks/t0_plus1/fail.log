@@ -1,0 +1,24 @@
+﻿aptos : [INFO] preparing module 0x42::prove
+所在位置 C:\Users\96247\AppData\Local\Temp\ps-script-bb5c30a3-7c4c-4431-9ade-71022998d175.ps1:78 字符: 1
++ aptos move prove --package-dir "E:\src\move-poc\baseline\hello_prover ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([INFO] preparing module 0x42::prove:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[INFO] generating verification conditions
+[INFO] 2 verification conditions
+[INFO] running solver
+[INFO] 0.74s build, 0.04s trafo, 0.03s gen, 2.44s verify, total 3.24s
+error: post-condition does not hold
+  鈹屸攢 E:\src\move-poc\baseline\hello_prover_t0_plus1\sources\prove.move:6:9
+  鈹?6 鈹?        ensures result == x+1;
+  鈹?        ^^^^^^^^^^^^^^^^^^^^^^
+  鈹?  =     at E:\src\move-poc\baseline\hello_prover_t0_plus1\sources\prove.move:2: plus1
+  =     at E:\src\move-poc\baseline\hello_prover_t0_plus1\sources\prove.move:3: plus1
+  =     at E:\src\move-poc\baseline\hello_prover_t0_plus1\sources\prove.move:4: plus1
+  =     at E:\src\move-poc\baseline\hello_prover_t0_plus1\sources\prove.move:6: plus1 (spec)
+
+{
+  "Error": "Move Prover failed: exiting with verification errors"
+}
+

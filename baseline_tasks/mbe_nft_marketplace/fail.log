@@ -1,0 +1,41 @@
+﻿INCLUDING DEPENDENCY AptosFramework
+INCLUDING DEPENDENCY AptosStdlib
+INCLUDING DEPENDENCY AptosTokenObjects
+INCLUDING DEPENDENCY MoveStdlib
+BUILDING marketplace
+aptos : warning: acquires and access specifiers are not applicable to inline functions and should be removed
+所在位置 C:\Users\96247\AppData\Local\Temp\ps-script-e8ba03bd-6444-45e5-967b-2068d99e4e42.ps1:80 字符: 1
++ aptos move test --package-dir "E:\src\move-poc\baseline\mbe_nft_marke ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: acquir...ould be removed:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    鈹屸攢 E:\src\move-poc\baseline\mbe_nft_marketplace\sources\marketplace.move:245:16
+    鈹?245 鈹?    inline fun borrow_listing(object: object::Object<Listing>): &Listing acquires Listing {
+    鈹?               ^^^^^^^^^^^^^^
+
+Running Move unit tests
+[ FAIL    ] 0x111::test_marketplace::test_fixed_price
+[ PASS    ] 0x111::test_marketplace::test_no_listing
+
+Test failures:
+
+Failures in 0x111::test_marketplace:
+
+鈹屸攢鈹€ test_fixed_price 鈹€鈹€鈹€鈹€鈹€鈹€
+鈹?error[E11001]: test failure
+鈹?    鈹屸攢 E:\src\move-poc\baseline\mbe_nft_marketplace\sources\marketplace.move:286:9
+鈹?    鈹?鈹?266 鈹?    fun test_fixed_price(
+鈹?    鈹?        ---------------- In this function in 0x111::test_marketplace
+鈹?    路
+鈹?286 鈹?        assert!(coin::balance<aptos_coin::AptosCoin>(seller_addr) == 10499, 0); // BUG: should be 10500 after sale at 500.
+鈹?    鈹?        ^^^^^^ Test was not expected to error, but it aborted with code 0 originating in the module 0000000000000000000000000000000000000000000000000000000000000111::test_marketplace rooted here
+鈹?
+鈹?
+鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+Test result: FAILED. Total tests: 2; passed: 1; failed: 1
+{
+  "Error": "Move unit tests failed"
+}
+

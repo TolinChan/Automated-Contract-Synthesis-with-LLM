@@ -1,0 +1,14 @@
+{
+  "task": "t1_aborts",
+  "model": "anthropic/claude-opus-4.6",
+  "success": true,
+  "rounds_used": 1,
+  "package_dir": "E:\\src\\move-poc\\baseline\\hello_prover_t1_aborts",
+  "relative_file": "sources/prove.move",
+  "verify": "prove",
+  "run_dir": "E:\\Automated Contract Synthesis and Repair with Large Language Models\\baseline_tasks\\t1_aborts\\loop_runs\\20260405T160934Z",
+  "initial_target_sha256": "c666c77647508c1173eb5ce525bf0cfad76384948cf81da16b0377129b8a0b72",
+  "backup_created": null,
+  "rounds_to_success": 1,
+  "final_target_sha256": "b4f7bb91a2a184925bc00c5ba543ef17c8d4055b64d6e13e93d97ae775a6854b"
+}

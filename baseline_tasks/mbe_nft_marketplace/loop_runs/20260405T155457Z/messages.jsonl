@@ -1,0 +1,3 @@
+{"event": "request_round_start", "round": 1, "num_messages": 2}
+{"event": "assistant", "round": 1, "content_preview": "```move\nmodule marketplace_addr::marketplace {\n    use std::error;\n    use std::signer;\n    use std::option;\n    use aptos_std::smart_vector;\n    use aptos_framework::aptos_account;\n    use aptos_framework::coin;\n    use aptos_framework::object;\n\n    #[test_only]\n    friend marketplace_addr::test_marketplace;\n\n    const APP_OBJECT_SEED: vector<u8> = b\"MARKETPLACE\";\n\n    /// There exists no listing.\n    const ENO_LISTING: u64 = 1;\n    /// There exists no seller.\n    const ENO_SELLER: u64 = 2;\n\n  "}
+{"event": "verifier", "round": 1, "exit_code": 0}

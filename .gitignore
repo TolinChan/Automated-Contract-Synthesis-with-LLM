@@ -1,0 +1,7 @@
+.env
+.env.*
+*_secret*
+**/model_response.txt
+**/model_patch.txt
+__pycache__/
+*.py[cod]

@@ -1,0 +1,14 @@
+{
+  "task": "t1_aborts",
+  "model": "openai/gpt-4o-mini",
+  "success": false,
+  "rounds_used": 8,
+  "package_dir": "E:\\src\\move-poc\\baseline\\hello_prover_t1_aborts",
+  "relative_file": "sources/prove.move",
+  "verify": "prove",
+  "run_dir": "E:\\Automated Contract Synthesis and Repair with Large Language Models\\baseline_tasks\\t1_aborts\\loop_runs\\20260405T155235Z",
+  "initial_target_sha256": "9b0381e98965acbe3fe6ddbab7f369c0c2be547ca3edc6464aa086cf755fa1f8",
+  "backup_created": "E:\\src\\move-poc\\baseline\\hello_prover_t1_aborts\\sources\\prove.move.buggy_before_loop.bak",
+  "reason": "max_rounds_exhausted",
+  "final_target_sha256": "c666c77647508c1173eb5ce525bf0cfad76384948cf81da16b0377129b8a0b72"
+}

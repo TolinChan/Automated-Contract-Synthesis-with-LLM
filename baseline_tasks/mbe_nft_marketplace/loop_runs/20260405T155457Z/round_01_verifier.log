@@ -1,0 +1,20 @@
+exit_code=0
+
+INCLUDING DEPENDENCY AptosFramework
+INCLUDING DEPENDENCY AptosStdlib
+INCLUDING DEPENDENCY AptosTokenObjects
+INCLUDING DEPENDENCY MoveStdlib
+BUILDING marketplace
+Running Move unit tests
+[ PASS    ] 0x111::test_marketplace::test_fixed_price
+[ PASS    ] 0x111::test_marketplace::test_no_listing
+Test result: OK. Total tests: 2; passed: 2; failed: 0
+{
+  "Result": "Success"
+}
+
+warning: acquires and access specifiers are not applicable to inline functions and should be removed
+    ┌─ E:\src\move-poc\baseline\mbe_nft_marketplace\sources\marketplace.move:245:16
+    │
+245 │     inline fun borrow_listing(object: object::Object<Listing>): &Listing acquires Listing {
+    │                ^^^^^^^^^^^^^^

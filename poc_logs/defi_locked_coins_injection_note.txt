@@ -1,0 +1,14 @@
+defi / locked_coins（官方示例）Move Prover 说明
+============================================
+
+基线：`defi_locked_coins_baseline_ok.txt`（aptos move prove --package-dir E:\src\move-poc\defi，Result: Success）
+
+定向注入尝试（未触发验证失败）：
+- 将 add_locked_coins 中 total_locks 递增由 +1 改为 +2：prove 仍为 Success。
+- 将 claim 中 total_locks 递减去掉（保持不减）：prove 仍为 Success。
+
+原因简述：当前包内无显式 `spec {}` 块 tied 到 total_locks 与表项数量的一致性；Move Prover 在此示例上验证的 13 个条件未覆盖上述逻辑错误。对汇报而言：
+- 仍可将「defi 包在本地框架下完整编译 + prove 通过」作为业务模块工具链冒烟；
+- 「注入实现错误 → prover 报错 → LLM 根据日志修复」的叙事请优先使用 hello_prover 的日志（见 hello_prover_injected_plus2_fail.txt）。
+
+若需 locked_coins 也出现 prover 失败，需在本地为相关函数补充规约（spec）或选用带规约的分支版本后再注入。

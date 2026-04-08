@@ -1,0 +1,3 @@
+{"event": "request_round_start", "round": 1, "num_messages": 2}
+{"event": "assistant", "round": 1, "content_preview": "```move\n#[test_only]\nmodule hello_blockchain::message_tests {\n    use std::signer;\n    use std::unit_test;\n    use std::vector;\n    use std::string;\n\n    use hello_blockchain::message;\n\n    fun get_account(): signer {\n        vector::pop_back(&mut unit_test::create_signers_for_testing(1))\n    }\n\n    #[test]\n    public entry fun sender_can_set_message() {\n        let account = get_account();\n        let addr = signer::address_of(&account);\n        aptos_framework::account::create_account_for_test"}
+{"event": "verifier", "round": 1, "exit_code": 0}

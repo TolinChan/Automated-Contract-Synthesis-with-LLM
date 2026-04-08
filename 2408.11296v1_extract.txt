@@ -1,0 +1,1371 @@
+
+--- page 1 ---
+RePair: Automated Program Repair with Process-based Feedback
+Yuze Zhao1, Zhenya Huang1,2*, Yixiao Ma1, Rui Li1, Kai Zhang1,
+Hao Jiang1, Qi Liu1,2, Linbo Zhu1,2, Yu Su2,3
+1State Key Laboratory of Cognitive Intelligence, University of Science and Technology of China
+2Institute of Artificial Intelligence Comprehensive National Science Center
+3School of Computer Science and Artificial Intelligence, Hefei Normal University, China
+{yuzezhao, mayx, ruili2000, kkzhang0808, jianghao0728}@mail.ustc.edu.cn
+{huangzhy, kkzhang08, qiliuql}@ustc.edu.cn
+lbzhu@iai.ustc.edu.cn
+yusu@hfnu.edu.cn
+Abstract
+The gap between the trepidation of program re-
+liability and the expense of repairs underscores
+the indispensability of Automated Program Re-
+pair (APR). APR is instrumental in transform-
+ing vulnerable programs into more robust ones,
+bolstering program reliability while simultane-
+ously diminishing the financial burden of man-
+ual repairs. Commercial-scale language models
+(LM) have taken APR to unprecedented lev-
+els. However, the emergence reveals that for
+models fewer than 100B parameters, making
+single-step modifications may be difficult to
+achieve the desired effect. Moreover, humans
+interact with the LM through explicit prompts,
+which hinders the LM from receiving feedback
+from compiler and test cases to automatically
+optimize its repair policies. In this literature,
+we explore how small-scale LM (less than 20B)
+achieve excellent performance through process
+supervision and feedback. We start by con-
+structing a dataset named CodeNet4Repair, re-
+plete with multiple repair records, which super-
+vises the fine-tuning of a foundational model.
+Building upon the encouraging outcomes of
+reinforcement learning, we develop a reward
+model that serves as a critic, providing feed-
+back for the fine-tuned LM’s action, progres-
+sively optimizing its policy. During inference,
+we require the LM to generate solutions itera-
+tively until the repair effect no longer improves
+or hits the maximum step limit. The results
+show that process-based not only outperforms
+larger outcome-based generation methods, but
+also nearly matches the performance of closed-
+source commercial large-scale LMs. 1
+1 Introduction
+Since the birth of the program, its reliability has
+been a primary concern. The capacity of large lan-
+guage models to auto-generate code has further
+*Corresponding author
+1Code and data are publicly available at https://github.
+com/TnTWoW/RePair
+• [1, 1, 1, 2]
+• [2, 3, 3]
+• [1]*10000
+Given an array nums 
+of size n, return the 
+majority element. The 
+majority element is the 
+element that appears 
+more than n/2 times.
+Problem 
+Description
+Compiler
+Memory Limit 
+Exceed Accepted
+Hidden Test Case Hidden Test Case
+• [1, 1, 1, 2]
+• [2, 3, 3]
+• [1]*10000
+Memory Limit: O(1)
+Time Limit: O(n)
+Time Limit 
+Exceed
+Submission 1
+def majorityElement(nums): 
+    nums.sort()
+    return nums[len(nums)/2]
+Submission 1
+def majorityElement(nums): 
+    nums.sort()
+    return nums[len(nums)/2]
+Submission 3
+def majorityElement(nums):
+    vote=0
+    for num in nums:
+        if vote == 0: x=num
+        vote+=1 if num==x else -1
+     return x
+Submission 3
+def majorityElement(nums):
+    vote=0
+    for num in nums:
+        if vote == 0: x=num
+        vote+=1 if num==x else -1
+     return x
+Submission 2
+def majorityElement(nums):
+    vote={}
+    for num in nums:
+        vote[num]=vote.get(num,0)+1
+    return max(vote,key=vote.get)
+Submission 2
+def majorityElement(nums):
+    vote={}
+    for num in nums:
+        vote[num]=vote.get(num,0)+1
+    return max(vote,key=vote.get)
+Figure 1: The general procedure for competitors to
+refine a solution on programming contest platform. Ini-
+tially, they draft a solution based on the problem descrip-
+tion and additional constraints such as time and memory
+limits. They then progressively improve their solution
+using feedback from the platform, like exceeding time
+or memory limits, until they achieve an accepted result.
+intensified these concerns (Khoury et al., 2023),
+sparking discussions on possible solutions. Pro-
+gram repair accepts vulnerable programs as input,
+enhancing them through locating, correcting, and
+testing - a process that is often challenging within
+software development and programming competi-
+tion. The confrontation arises when these defective
+programs encounter errors only when they receive
+rare and unexpected inputs. Moreover, it requires
+experienced programmers to invest substantial time
+in identifying and rectifying errors. A sophisticated
+Automated Program Repair (APR) system can re-
+duce the expertise threshold and time commitment
+required, significantly enhancing the robustness of
+the program.
+Prior works viewed APR as a sequence-to-
+sequence task, then LLMs, with their massive
+model parameters and training data, can address
+this issue through zero- or few-shot learning (Jiang
+et al., 2021; OpenAI, 2023; Ouyang et al., 2022;
+Chen et al., 2021; Zeng et al., 2022; Touvron et al.,
+2023; Hoffmann et al., 2022; Anil et al., 2023;
+Chen et al., 2022; Le et al., 2022; Rozière et al.,
+2024; Guo et al., 2024; Wei et al., 2023; Zhang
+et al., 2023). Whether it’s traditional methods or
+arXiv:2408.11296v1  [cs.SE]  21 Aug 2024
+--- page 2 ---
+LLMs, they achieve the repair by making a single
+modification. These outcome-based supervision
+methods pose a stringent challenge to the model
+due to the substantial edit distance between input
+and output. Simultaneously, the one-step modifi-
+cation approach does not align with human behav-
+ioral patterns: To be specific, when facing com-
+plex tasks, programmers usually repair the buggy
+program step by step in a cycle of modification,
+testing, and feedback. This inspires us to pay atten-
+tion to the exploration of modification processes
+in APR tasks. Unlike outcome-based supervision,
+this process-based method requires guidance and
+supervision at each modification step.
+Figure 1 depicts the typical program repair pro-
+cess in programming competitions, which is guided
+by compilers and test cases: Competitors initially
+construct a sketch of the program based on the
+problem’s intent and other constraints. They then
+complete the repair through a continuous process
+of submission, feedback, and interaction. Specifi-
+cally, they initially attempt to solve “Find the ma-
+jority element” problem by sorting and selecting
+the middle element. However, when they encounter
+time constraints, they shift to calculating each el-
+ement’s frequency. But this method still requires
+O(n) space complexity. After receiving “Mem-
+ory Limit Exceed” status, they ultimately use the
+Boyer-Moore majority vote algorithm with O(1)
+space complexity.
+This example illustrates the characteristics of
+process-based program repair, which necessitates
+ongoing interaction with the compiler and test cases
+for feedback-guided repair. However, applying this
+type of process-based feedback on LMs appears un-
+feasible. First and foremost, the primary obstacle
+hindering related research is the absence of process-
+based datasets in practical scenarios. Second, the
+supervision method for intermediate processes in
+APR tasks are still under exploration. Previous
+work explored process-based supervision in mathe-
+matical problem solving and reasoning tasks (Light-
+man et al., 2023; Liu et al., 2023a), which required
+the intermediate steps to be correct. However, the
+intermediate steps in APR tasks serve as incorrect
+supervision signals and cannot be directly used
+for training. Last, interaction with LMs can be
+achieved through explicit prompt engineering. At-
+tempts to use prompt engineering instead of com-
+piler and test cases for feedback hinder the precise
+construction of human intentions by LMs.
+In this work, to the best of our knowledge, we
+DeepFix Review4Repair Bug2Fix CodeNet4RepairLanguage C Java Java PythonTest Cases × × × ✓Repair Form single step single step single step multi stepProblem Description× × × ✓Test Size 6,971 2,961 58,356,545 10,144
+Table 1: A comparison between the CodeNet4Repair
+dataset and existing datasets for program repair. The
+advantages of CodeNet4Repair stem from its compre-
+hensive inclusion of test cases, problem descriptions,
+and detailed repair steps. CodeNet4Repair’s test set
+contains 10,144 complex program repair processes at
+competition level.
+conduct the first few comprehensive exploration of
+process-based feedback with LMs in APR task. For
+this, we first establish a multi-step program repair
+dataset called CodeNet4Repair. Following that, we
+introduce a process-based feedback APR frame-
+work called RePair. RePair includes two models:
+a reward model and a repair model. We start by
+training a reward model to mimic the compiler as a
+virtual tool. It takes program text as input and gives
+assertions about the program’s status. The repair
+model works on buggy programs, completing one
+repair in a step. It then offloads the assessment of
+the program’s status to the virtual tool and waits
+for feedback to adjust the strategy for the next mod-
+ification. Finally, we use pass@ k as a metric to
+objectively assess the quality of program repair.
+2 Data Collection
+As far as we know, there has not been a dataset
+established for program repair tasks that includes
+processes. Thus we attempt to develop a proce-
+dural dataset specifically for these tasks. Overall,
+the dataset includes problem description, memory
+and time limit of the problem, repair process (a
+series of programs from error to correctness) and
+resource usage during execution (memory usage,
+CPU time, and code size). We derive our data from
+the large-scale programming competition dataset
+CodeNet (Puri et al., 2021). We make every effort
+to cleanse and filter this data to guarantee its qual-
+ity. We clarify problem description, clean up the
+program from preliminary to fine, and collect addi-
+tional high-quality test cases. Finally, we organize
+the program into a procedural format. In Table 1,
+we compare other excellent datasets and showcased
+the unique aspects of CodeNet4Repair (Gupta et al.,
+2017; Huq et al., 2020; Tufano et al., 2019).
+--- page 3 ---
+LEARNING
+Pre-trained LM
+Fine-tuned LM
+Process-based Feedback
+CompilerCompiler
+Environment
+Test cases
+Case 1
+Case 2
+……
+Case 1
+Case 2
+……
+Test cases
+Case 1
+Case 2
+……Compiler
+Environment
+Test cases
+Case 1
+Case 2
+……
+AC>PE>WA>CE>RE
+Reward ModelReward Model
+AC>PE>WA>CE>RE
+Reward Model
+Fine-tuned LM
+Buggy
+solution
+Buggy
+solution
+Candicate
+solution
+Candicate
+solution
+Fine-tuned LM
+Buggy
+solution
+Candicate
+solution
+Process-based Feedback
+Compiler
+Environment
+Test cases
+Case 1
+Case 2
+……
+AC>PE>WA>CE>RE
+Reward Model
+Fine-tuned LM
+Buggy
+solution
+Candicate
+solution
+CodeNet4Repair
+Problem description
+ACPEWACE
+Repair process
+CodeNet4Repair
+Problem description
+ACPEWACE
+Repair process
+Figure 2: An illustration of process-based Automated Program Repair with compiler and test case feedback: (1) The
+introduction of a clean, privacy-protected dataset called CodeNet4Repair. (2) The application of Supervised Fine-
+Tuning (SFT) on pre-trained language models. (3) The incorporation of process-based feedback via reinforcement
+learning (RL). This process includes: establishing a reward model as a critic, and LM adjusts its repair policies
+based on the feedback from the critic. SFT and RL are both trained on CodeNet4Repair training set.
+2.1 Problem Description Collection
+Even professional programmers need to understand
+the problem that the program is intended to solve
+when fixing it. CodeNet provides unprocessed
+HTML for storing the description of each ques-
+tion. We utilize regular matching to extract these
+descriptions from the CodeNet’s HTML files. Fi-
+nally, we manually supplement any descriptions
+that were challenging to recognize with Optical
+Character Recognition.
+2.2 Program Preliminary Filtering
+We chose Python as our benchmark language. We
+design the following rules for preliminary filtering.
+(1) No duplicate submissions. Casual or copy
+submissions do not aid in program repair process.
+(2) No malicious submissions, which include au-
+tomated disruptive attempts, invalid code aimed at
+attacking the platform’s codebase, and destructive
+codes designed to interfere with system files.
+(3) No privacy breach submissions. Some IDEs
+automatically generate comments that could reveal
+the author’s identity.
+(4) Ensure each repair process includes at least
+one acceptable commit. The processes without any
+accepted outcomes will be excluded.
+After this preliminary filtering, we obtain
+1,227,259 submission programs. All non-English
+characters from the code comments are removed
+prior to fine filtering.
+2.3 Program Fine Filtering
+Although the original CodeNet dataset provides the
+program execution status (e.g., Wrong Answer or
+Accepted), these may vary due to differences in
+Python versions and environments. We set up a
+standard Python 3.11.3 environment and are metic-
+ulously testing each of the 1,227,259 execution
+results using test cases to ensure consistent status.
+Ignoring extra expenses such as process switch-
+ing and assuming an average execution time of 4
+seconds per solution, we would require a total of
+4×1227259
+60×60 = 1364( Core · hours) CPU time. Fi-
+nally, we obtain 278,408 consistent programs. We
+arrange the answer records of each user for each
+question in chronological order, ensuring that the
+last program is “Accepted”.
+To enhance evaluations precision, we expand
+the number of high-quality test cases collected
+online and annotated by hand. We organize
+these programs with high-quality test cases into
+a procedure-based dataset called CodeNet4Repair.
+CodeNet4Repair is an information-leak-free pro-
+gram repair dataset with Apache-2.0 License.
+3 Method
+Our methodology follows that of Ouyang et al.,
+which aligned GPT-3 with human. We start from
+StarCoderBase (Li et al., 2023), a 15.5B code foun-
+dation pre-trained LM with 8K context length. It
+is trained on 1 trillion tokens from The Stack (Ko-
+cetkov et al., 2023). Figure 2 illustrates the tech-
+niques used to train RePair.
+--- page 4 ---
+3.1 Supervised Fine Tuning on APR Task
+To ensure that the LM can understand pro-
+gram repair tasks, we use the prompt templates
+in Appendix A.1 for Supervised Fine-Tuning
+(SFT) (Zhang et al., 2022; Huang et al., 2024).
+Given a vulnerable program sequence x =
+{x1, x2, ..., xN }, LM is expected to output a ro-
+bust program y = {y1, y2, ..., yN ′ }, yt ∈ V that
+can pass all test cases, where V is vocabulary. Dur-
+ing the training phase, the model parameters θ are
+learned by maximizing the likelihood of the out-
+put and the ground-truth (Zhang et al., 2021). The
+training objective is to minimize the following loss:
+Lce(θ) = E[− log P (y | x; θ)]
+= −
+N ′
+X
+t=1
+log P (yt | y<t, x; θ) ,
+(1)
+where E is the expectation over entire dataset, and
+y<t is a partial sequence before time-step t.
+3.2 Process-based Feedback
+After supervised fine-tuning, we generally obtain
+a fine-tuned LM suitable for the APR tasks. How-
+ever, this model only understands how to provide
+a possible solution under the condition of given
+x, lacking process supervision and feedback from
+environment like compilers and test cases. To en-
+sure that the LM can gradually refine the program
+through interaction, we introduce reinforcement
+learning (RL). In this context, we treat the fine-
+tuned LM as an actor. Given a state x, its output ˆ y
+is considered an action. Guided by feedback from
+the reward model, it iteratively refines program
+towards a final possible result.
+3.2.1 Reward Modeling
+Instead of using direct feedback from the compiler
+and test cases, we train a reward model (RM) to as-
+sess program quality. The reward model serves as
+a virtual tool, while the LM optimizes repair strate-
+gies by interacting with it. The main reasons boil
+down to two points: (1) During training, direct in-
+teraction with the environment significantly blocks
+the training pipeline. The batch-processed tensors
+in cuda must first be transferred to memory for de-
+coding, undergoing syntax check and case testing
+sequentially; when providing feedback, these re-
+sults are re-encoded and sent back to cuda. This
+process drastically reduces the throughput - a cost
+that is unbearable. (2) During the inference phase,
+Algorithm 1 Generate Repaired Program with
+Process-based Feedback, Actor-Critic Style
+Input: Trained critic rϕ(·); Trained actor’s policy
+πθ; Vulnerable program x0; Max iterations T ; Max
+Patience P
+Output: Repaired Program
+1: t = 0 ▷ Counter of timestep
+2: p = 0 ▷ Counter of unimproved patience
+3: r0 = rϕ(x0) ▷ Initialize the reward
+4: while t < T & p < P do
+5: xt+1 = πθ(xt) ▷ Actor generate
+6: rt+1 = rϕ(xt+1) ▷ Critic review
+7: ∆ = rt+1 − rt ▷ Evaluate the boost
+8: if ∆ ≤ 0 then ▷ If no boost
+9: p = p + 1
+10: else
+11: p = 0 ▷ Counter reset
+12: end if
+13: t = t + 1
+14: end while
+15: return xt−p ▷ Roll back to p steps ago
+the inability to access test cases for vulnerable pro-
+grams compromises generalization performance.
+Unlike the methods used by (Christiano et al.;
+Ziegler et al.; Stiennon et al.; Ouyang et al.), our ap-
+proach doesn’t require extensive investment in col-
+lecting human preferences to train a reward model.
+We can substantially reduce costs by sourcing pro-
+gram execution preferences from automated com-
+piler and test cases. Specifically, we first empir-
+ically define a non-strict partial order based on
+program quality from high to low:
+AC > PE > W A= TLE = MLE > CE > RE.
+AC signifies that the program was “Accepted”
+by all test cases. PE stands for “Presentation Er-
+ror", which indicates that the output data is correct
+but not properly formatted. WA, TLE, MLE, CE,
+RE are abbreviations for “Wrong Answer”, “Time
+Limit Exceed”, “Memory Limit Exceed”, “Com-
+pile Error” and “Runtime Error” respectively. This
+partial order defines the severity of program errors
+in an ascending order, from AC (lowest) to RE
+(highest). We prioritize fixing RE over CE because
+RE typically indicates more serious issues such as
+logical errors which pose a greater risk than CE.
+Then, we optimize the reward model parameters
+ϕ using pairwise ranking based on the above partial
+order. Given K programs with status, all aimed
+--- page 5 ---
+0 50 100 150 200 250
+Edit Distance
+0-1
+1-2
+0-2Modification Step
+(a) Edit Distance
+0 20 40 60 80 100 120
+Number of test cases
+0
+100
+200
+300Number of problems
+(b) T est Case Distribution
+Figure 3: (a) The edit distances between three program
+after 2-step modifications. 0-1: The edit distance after
+the first refinement; 1-2: The edit distance after the
+second refinement; 0-2: The edit distance of a single-
+step refinement. (b) The distribution of test cases. Most
+of the test cases are concentrated between 10-20.
+at solving an identical problem, there is a partial
+order set D containing
+ K
+2
+
+pairs of partial orders.
+After shuffling D, we train the reward model by
+minimizing the following pairwise ranking loss:
+Lpr(ϕ) =− 1
+(K
+2)E(yw,yl)∼D[log (σ(rϕ(yw) −rϕ(yl)))],
+(2)
+where rϕ (·) is a reward model, which takes a pro-
+gram as input and outputs a scalar reward. In
+practice, we use another smaller pre-trained auto-
+regressive model, and replace the original model’s
+non-embedding layers with a projection layer to
+output a scalar value. The pair (yw, yl) is a par-
+tial order where yw is the preferred program (for
+instance, the status of yw is AC while yl is W A).
+3.2.2 Reinforcement Learning
+In the previous two sections, we fine-tuned a LM
+and developed a reward model capable of realisti-
+cally evaluating program states by optimizing loss
+Lce(θ) and loss Lpr(ϕ) respectively. In this section,
+we will utilize reinforcement learning (RL) to fi-
+nalize program repair through multiple interactions
+with the fine-tuned LM and well-trained reward
+model (Qian and Yu, 2021). We adopt Proximal
+Policy Optimization (PPO) algorithm (Stiennon
+et al., 2020; Ouyang et al., 2022; Schulman et al.,
+2017) to fine-tune our LM. The LM functions as an
+actor, generating a repaired program (action) based
+on the input program (state) and the policy π of the
+LM (i.e., LM parameters θ). The trained reward
+model plays as a critic, assessing the effectiveness
+of repairs and rewarding the LM accordingly. Our
+objective is to optimize the LM parameters θ by
+maximizing these rewards.
+#problems #records #codes
+Train set 563 94062 252031
+Test set 61 10144 26377
+record per problem code per record size per code
+Train set 167.07 2.68 270.42
+Test set 166.3 2.60 246.88
+Table 2: Dataset Information
+To be more specific, we supervise the process by
+maximizing the the following objective function:
+Lrl(θ)=E(xi,xi+1)∼Dπθ′
+h
+rϕ(xi+1)−rϕ(xi)−βKL
+
+θ, θ
+′i
+= E(xi,xi+1)∼Dπθ′
+
+∆rϕ(xi+1, xi) −βlog πθ(xi+1 | xi)
+πθ′(xi+1 | xi)
+
+,
+(3)
+where xi+1 is the refined output based on the input
+xi and learned LM’s policyπθ′ , rϕ(·) is calculated
+as the learned reward model, the KL reward co-
+efficient β control the strength of the KL penalty,
+∆r
+ϕ(xi+1, xi) = rϕ(xi+1) − rϕ(xi) means the eval-
+uation of the degree of improvement.
+3.3 Multi-step Generation Under RM
+Supervision
+We achieved process supervision with feedback by
+maximizing reward function. In this section, we
+will demonstrate how the language model interacts
+with virtual tools during the generation phase to
+achieve alignment during both training and gener-
+ation stages. We continuously request the LM to
+refine solutions until either of two conditions is met:
+(1) there is no improvement (∆ ≤ 0) in P consecu-
+tive steps; (2) the maximum number of iterations
+has been reached. The Algorithm 1 elucidates the
+specific process of generation.
+4 Experiments
+4.1 Data Preparation
+We sample repair records that corrected after two-
+step modifications from CodeNet4Repair, resulting
+in three versions, and calculate the edit distance
+between these versions. In Figure 3 (a), the find-
+ings align with our hypothesis: The edit distance
+required to complete the repair in one step is longer
+than that required in multiple steps. Despite an
+increase in overall cost, step-by-step repairing can
+reduce the complexity of tasks.
+We ensure evaluation quality by using only ques-
+tions with high-quality test cases for our training
+and testing sets. We manually annotate and collect
+additional high-quality test cases from the internet
+to serve as hidden tests for each problem. This
+process resulted in test cases for 794 questions.
+--- page 6 ---
+Model Size pass@1 pass@3 pass@5
+Easy Medium Hard All Easy Medium Hard All Easy Medium Hard All
+Close-source
+PaLM 540B 16.83 15.94 18.57 17.1322.07 29.38 27.86 26.1124.39 37.50 31.43 30.56
+GPT-3.5 - 53.41 45.32 39.14 46.3965.24 62.03 58.57 62.1368.29 65.63 65.71 66.67
+Claude2 - 50.73 43.75 36.29 43.9865.12 63.75 55.29 61.5371.95 73.44 62.86 69.44
+ChatGLM-Pro - 20.49 20.94 17.43 19.6323.17 27.19 24.43 24.7724.39 29.69 28.57 27.31
+Open-source
+StarCoderBase 15B0.49 0.31 0.00 0.28 1.46 0.94 0.00 0.83 2.44 1.56 0.00 1.39
+StarCoderChat 15B0.00 0.00 0.57 0.46 0.00 0.00 1.29 0.42 0.00 0.00 1.43 0.46
+CodeGen2 16B 4.15 1.87 0.29 2.22 10.73 5.16 0.86 5.88 15.85 7.81 1.43 8.80
+CodeGeeX2 6B 7.80 7.19 1.43 5.56 19.27 17.03 3.86 13.61 26.83 23.44 5.71 18.98
+LLaMA2 70B 10.24 5.94 6.00 7.59 20.37 14.84 10.86 15.6524.39 21.88 12.86 19.91
+LLaMA2-Chat 70B30.73 23.13 18.86 24.6339.02 33.13 25.71 32.9641.46 39.06 30.00 37.04
+Our Model15B 51.61 44.13 40.57 44.3462.47 59.98 52.34 60.0167.75 64.14 60.32 65.66
+Table 3: Results on CodeNet4Repair: compared to open-source models, our process-based feedback method has
+demonstrated superior performance. It also remains competitive when compared with commercial LLMs.
+Figure 3 (b) shows the distribution of these test
+cases. To prevent data leakage, we divided Co-
+deNet4Repair based on the problem ID in a ratio
+of 9:1. The training set consists of 94,062 repair
+processes, while the testing set comprises 10,144
+repair processes. Table 2 provides the statistical
+information about filtered dataset.
+4.2 Experimental Setup
+In the fine-tuning stage, we train our model using
+mixed precision training. We use AdamW opti-
+mizer with 2e-5 learning rate. To prevent train-
+ing instability caused by an excessively high learn-
+ing rate, we utilize a cosine LR schedule down
+to 10% of the original learning rate with learning
+rate warmup. We use ZeRO++ to distribute model
+tensors across accelerators (Wang et al., 2024).
+In reward modeling, we adopt the LR of 9.6e-6
+and cosine learning rate schedule. We randomly
+select K = 9 programs in same problem and rank
+them based on their execution status. Each batch
+contains 64 units, thus a single gradient backpropa-
+gation involves 64 ×
+ 9
+2
+
+= 2304 comparisons.
+In the process-based feedback stage, we initial-
+ize RL policies from the fine-tuned LM. We train
+the LM for 32k episodes with 512 batch size. We
+assign a KL penalty factor, β, of 0.02 and establish
+a learning rate of 9e-6. We perform nucleus sam-
+pling with top_p=0.95 and top_k=50, and set the
+temperature to 0.2.
+4.3 Baselines
+We compare the latest state-of-the-art LM that pos-
+sess few-shot learning and code comprehension
+capabilities. These models include PaLM (chat-
+bison-001) (Anil et al., 2023), GPT-3.5 (gpt-3.5-
+turbo-0613), Claude2 and ChatGLM-Pro (Zeng
+et al., 2022). We also compare some open-
+sourced models such as StarCoderBase/Chat (Li
+et al., 2023), CodeGen2, CodeGeeX2 (Zheng et al.,
+2023), LLaMA2/-chat (Touvron et al., 2023).
+4.4 Evaluation
+Previous program repair datasets lacked annotated
+test cases and stable test environment (Dinella et al.,
+2020; Hendrycks et al., 2021; Li et al., 2022; Wang
+et al., 2023), leading to a shortage of automatic
+evaluation methods for program repair based on ex-
+ecution results. We contend this issue and advocate
+for the evaluation using execution outcomes.
+Following previous code generation’s evaluation
+method, we use pass@ k as our evaluation met-
+ric (Hendrycks et al., 2021; Chen et al., 2021; Ni-
+jkamp et al., 2023). Here we use the unbiased
+estimator proposed in (Chen et al., 2021), which is
+defined as follows:
+pass @ k = E
+"
+1 −
+ n−c
+k
+
+ n
+k
+
+#
+. (4)
+In this work, we report k ∈ { 1, 3, 5} as the fi-
+nal result. The reason is that in pass@ k, a larger
+k provides a more comprehensive assessment of
+LM’s ability to generate code. However, in practice,
+users won’t request multiple candidates repeatedly;
+therefore, reporting a small number of k suffices
+for program repair evaluation.
+4.5 Main Results
+We use the pass rate of all problems in 14 billion
+submission records as a standard to measure the
+difficulty of the problems. These problems are cat-
+egorized into three levels - easy, medium, and hard
+- based on their pass rates divided into tertiles. The
+model’s performance at various difficulties is de-
+tailed in Table 3. The results of the experiment
+--- page 7 ---
+Model pass@1pass@3pass@5Process Feedback Reward
+× × - 36.32 47.63 52.63
+× ✓ Pair 37.26 54.81 62.27
+✓ × - 20.43 35.14 44.72
+✓ ✓ Pair 44.34 60.01 65.66
+✓ ✓ Point 40.11 58.89 64.27
+✓ ✓ List 39.45 57.33 63.56
+Table 4: The results of ablation study. We conduct an in-
+depth study on the design of process supervision, feed-
+back, and reward functions. The experimental results
+confirm our model’s effectiveness. Point: Point-wise
+loss; Pair: Pair-wise loss; List: List-wise loss.
+indicate that our model outperforms all other open-
+source models. Even when compared to sophisti-
+cated commercial LLMs, we achieve competitive
+results. Starting with an analysis of the open-source
+models: We acknowledge that some performance
+gains come from supervised fine-tuning. However,
+as evidenced by StarCoderBase/Chat results, our
+foundation model lacks zero- or few-shot program
+correction capabilities and struggles with repair
+tasks without supervised fine-tuning. In compari-
+son to LLMs designed for code downstream tasks,
+our repair model generates programs that better
+meet task requirements and outperforms them at
+every difficulty level. Moreover, in LLaMA2-Chat
+we found that multiple rounds of dialogue-based
+supervised fine-tuning do not degrade but rather en-
+hance its understanding of human instructions and
+repair abilities. While our model’s performance
+is not yet on par with commercial LLMs such as
+ChatGPT and Claude2, considering the resources
+they’ve invested - including compute, data collec-
+tion, and manual annotation among others - which
+are significantly greater than ours, we have still
+achieved competitive results. This validates the ef-
+fectiveness of our process-based feedback method
+and provides guidance for future research.
+4.6 Model Analysis
+We explore the rationality of the model including
+process supervision, feedback, and reward function
+design. We design different variants from those
+three perspectives. First, we arrange and combine
+process supervision and feedback to create four
+different approaches. Then, we discuss the design
+of reward functions within the process-based feed-
+back framework.
+Impacts of Process Supervision. We attempt
+to eliminate process supervision signals, enabling
+pass@1 pass@3 pass@5
+Metrics
+0
+10
+20
+30
+40
+50
+60Average Score
+CodeGen2_7B
+CodeGen2_16B
+CodeGeeX2
+LLaMA2-chat-hf_13B
+RePair (SFT only)
+RePair
+Figure 4: Performance comparison on other fine-tuned
+open-sourced model.
+the model to depend solely on single-step supervi-
+sion signals. Without feedback, the model degen-
+erates into a fine-tuned single-step program repair
+model. While with the feedback, the fine-tuned
+model’s adjustment of its repair policies is limited
+to the final signal.
+Impacts of Feedback. We remove feedback
+from the reward function during process supervi-
+sion, which prevents the language model from us-
+ing reinforcement learning for policy adjustment.
+When given a repair sequence, we force the lan-
+guage model to use the subsequent repair step as a
+supervision signal for learning.
+Impacts of Reward Function. We introduce
+two variants to verify the effectiveness of pairwise
+ranking in reward modeling. We use two rank-
+ing methods: point-wise, and list-wise. Point-wise
+ranking scores individual program states without
+considering their order relationship; while list-wise
+ranking compares multiple programs together (be-
+yond pairs) to determine their order relationship.
+The results of the experiment are shown in Ta-
+ble 4. We can draw the following conclusions
+from the results: (1) Regardless of the supervision
+method used, introducing feedback to adjust LM’s
+repair policies is necessary. Performance may sig-
+nificantly decrease due to additional noise if feed-
+back is lacking in the process-based supervision
+method. (2) Pair-wise ranking proves more effec-
+tive as a reward model compared to point-wise or
+list-wise ranking. Using point-wise ranking solely
+requires the model to score each program based on
+compiler and test case, without comprehending the
+program’s preferences and modification direction.
+Conversely, providing K rankings simultaneously
+--- page 8 ---
+0 1 2 3 4 5
+0
+10
+20
+30
+40
+50
+60Pass@1
+Easy
+0 1 2 3 4 5
+Training steps
+Medium
+0 1 2 3 4 5
+Hard
+StarCoder
+StarCoder_SFT
+CodeGen2
+CodeGen2_SFT
+ChatGPT
+RePair
+Figure 5: Performance of explicit prompts at different
+training steps. At three difficulty levels, the best perfor-
+mance was achieved at three training steps. ChatGPT
+can effectively understand feedback from the compiler
+and test cases. For small-scale models, explicit prompts
+are still difficult to understand.
+in a list-wise task can be overly complicated and
+potentially hinder performance.
+4.7 Process-based Feedback Can Bring
+Performance Benefits
+Someone might question the superiority of RePair
+over current open-source models due to our use of
+SFT on the training set, while other models em-
+ployed a few-shot setting. It is important to clarify
+that SFT was utilized to enhance the model’s com-
+prehension of the repair task, rather than being the
+primary factor for performance improvement. To
+substantiate this, we also fine-tune several open-
+source models with similar parameter counts using
+the same dataset. The results, presented in Figure 4,
+demonstrate a performance enhancement following
+SFT. However, this improvement is largely due to
+the model’s increased understanding of the task and
+the standardization of output formats. Furthermore,
+when combined with SFT, process-based feedback
+method significantly amplifies the model’s poten-
+tial, leading to even greater performance gains.
+4.8 Smaller Models May Struggle to Receive
+Effective Explicit Feedback
+As mentioned in the abstract and introduction, un-
+derstanding explicit prompts for small-scale LMs
+remains challenging. We directly interact with
+LMs using the prompt template provided in Ap-
+pendix A.1. We fine-tune two open-source mod-
+els, StarCoder and CodeGen2, within 5 steps and
+present the experimental results in Figure 5. The
+experimental results indicate that: (1) The perfor-
+mance of the open-source model peaked after three
+Edit Distance 23
+Edit Distance 11Edit Distance 28
+x, y = map(int, input().split())
+count1 = abs(y + x) + 1
+count2 = abs(y - x)
+count3 = abs(x - y + 2)
+print(min(count1, count2, count3))
+ 
+x, y = map(int, input().split())
+count1 = abs(y + x) + 1
+count2 = abs(y - x)
+count3 = abs(x - y + 2)
+print(min(count1, count2, count3))
+ 
+x, y = map(int, input().split())
+count1 = abs(y + x) + 1
+count2 = max(abs(y - x), abs(x - y) + 2)
+print(min(count1, count2))
+x, y = map(int, input().split())
+count1 = abs(y + x) + 1
+count2 = max(abs(y - x), abs(x - y) + 2)
+print(min(count1, count2))
+x, y = map(int, input().split())
+count1 = abs(y + x) + 1
+count2 = max(y - x, x - y + 2)
+print(min(count1, count2))
+x, y = map(int, input().split())
+count1 = abs(y + x) + 1
+count2 = max(y - x, x - y + 2)
+print(min(count1, count2))
+Snuke has a calculator. It has a display and two buttons.
+Initially, the display shows an integer x.
+Snuke wants to change this value into another integer y,
+by pressing the following two buttons some number of times in arbitrary order:
+Button A: When pressed, the value on the display is incremented by 1.
+Button B: When pressed, the sign of the value on the display is reversed. 
+Find the minimum number of times Snuke needs to press the buttons to achieve his objective.
+Problem Description
+Snuke has a calculator. It has a display and two buttons.
+Initially, the display shows an integer x.
+Snuke wants to change this value into another integer y,
+by pressing the following two buttons some number of times in arbitrary order:
+Button A: When pressed, the value on the display is incremented by 1.
+Button B: When pressed, the sign of the value on the display is reversed. 
+Find the minimum number of times Snuke needs to press the buttons to achieve his objective.
+Problem Description
+Step 1
+Step 3
+Step 2
+Wrong Answer Wrong Answer
+Accepted
+Edit Distance 23
+Edit Distance 11Edit Distance 28
+x, y = map(int, input().split())
+count1 = abs(y + x) + 1
+count2 = abs(y - x)
+count3 = abs(x - y + 2)
+print(min(count1, count2, count3))
+ 
+x, y = map(int, input().split())
+count1 = abs(y + x) + 1
+count2 = max(abs(y - x), abs(x - y) + 2)
+print(min(count1, count2))
+x, y = map(int, input().split())
+count1 = abs(y + x) + 1
+count2 = max(y - x, x - y + 2)
+print(min(count1, count2))
+Snuke has a calculator. It has a display and two buttons.
+Initially, the display shows an integer x.
+Snuke wants to change this value into another integer y,
+by pressing the following two buttons some number of times in arbitrary order:
+Button A: When pressed, the value on the display is incremented by 1.
+Button B: When pressed, the sign of the value on the display is reversed. 
+Find the minimum number of times Snuke needs to press the buttons to achieve his objective.
+Problem Description
+Step 1
+Step 3
+Step 2
+Wrong Answer Wrong Answer
+Accepted
+Figure 6: An example of repair process for “Count the
+number of integer transitions”.
+steps of fine-tuning. (2) ChatGPT’s performance
+was further enhanced after receiving feedback from
+compilers and test cases, demonstrating better re-
+sults than one-step repair. (3) Small-scale mod-
+els struggle to comprehend feedback information
+through explicit prompts.
+4.9 Qualitative Results
+As shown in Figure 6, our model through step-by-
+step modification, have effectively simplified the
+complexity of each repair step and achieved sat-
+isfactory “Accepted” results. For more examples,
+please refer to the Appendix A.3.
+5 Related Works
+5.1 Large Language Models
+The recent years have witnessed a substantial evolu-
+tion in the field of large language models. language
+modeling is the prediction of the probability dis-
+tribution of the next token given a context. The
+scaling law makes it possible to enhance perfor-
+mance by increasing the size of the model and
+data (Kaplan et al., 2020). The emergence of large-
+scale language models with over 100B parameters
+has consistently resulted in record-breaking perfor-
+mance (Srivastava et al., 2023; Hendrycks et al.,
+2021; Chen et al., 2021). Larger models begin to
+solve problems that smaller models cannot handle,
+a phenomenon known as emergence. Typical phe-
+nomena of emergence include In Context Learning
+(ICL) and Chains of Thought (CoT) (Brown et al.,
+2020; Wei et al., 2022). The core of ICL is to draw
+knowledge from analogies. After providing demon-
+strations, the query problem is presented alongside
+prompts to form the input. A CoT is a prompt
+formed through a series of logical thinking steps,
+guiding the LLMs to answer in a thoughtful manner.
+--- page 9 ---
+This method can significantly improve performance
+on reasoning tasks (Liu et al., 2023b). Our work is
+dedicated to using small-scaled language models
+to enhance program repair performance.
+5.2 Outcome- and Process- based Approaches
+The outcome-based approaches supervise the final
+results, while the process-based approach focuses
+on each step leading to the result. Both have their
+strengths and weaknesses: outcome-based requires
+fewer supervision signals, but process-based ap-
+proaches align more with human thinking patterns.
+In (Uesato et al., 2022), researchers conducted ex-
+periments on math dataset and found that both ap-
+proaches produced similar error rates, but due to
+cost considerations, the process-based method per-
+formed better. However, recent research (Light-
+man et al., 2023) has proposed a different view;
+after building larger datasets and annotating more
+processes, the process-based method showed clear
+advantages. Process-based can help machine learn-
+ing systems accurately understand humans’ way of
+thinking and regulate potential hallucination.
+5.3 Learning from Feedback
+Through learning from feedback, language models
+can effectively receive signals beyond labels (Gou
+et al., 2024). Some NLP tasks rely on automated
+evaluation metrics such as BLEU, ROUGE to
+get feedback from ground truth. However, this
+kind of automatic feedback that solely depends
+on exact matching is not an effective assessment
+criterion (Colombo et al., 2022). Therefore, re-
+searchers are attempting to train language models
+using human preferences as supervisory signals.
+In some open text generation tasks, learning from
+human feedback has significantly improved perfor-
+mance (Jaques et al., 2019; Bahdanau et al., 2016;
+Lawrence and Riezler, 2018; Zhou and Xu, 2020;
+Stiennon et al., 2020). Following this line, (Ouyang
+et al., 2022) applies human feedback to GPT-3 to
+achieve alignment with humans, thereby mitigating
+the issue of generating untruthful or toxic text. Our
+work focuses on obtaining feedback from the com-
+piler as a virtual tool, integrating signals from the
+tools into the training process of language models.
+6 Conclusion
+In this work, we proposed an automated program
+repair method that utilizes process-based feedback.
+This approach is inspired by strategies used in pro-
+gramming competitions and incorporates process
+supervision into the repair process. Due to the un-
+availability of suitable datasets, we first created a
+multi-step repair dataset called CodeNet4Repair.
+This dataset not only includes the initial faulty pro-
+grams and the final accepted ones but also records
+the intermediate repair process. On this basis, we
+implemented supervision over the process with
+feedback. Specifically, we fine-tuned a pre-trained
+model StarcoderBase through to make it under-
+stand program repair tasks. Then, we empirically
+defined a partial order relationship for program
+states and trained reward models using pairwise
+ranking. This reward model would serve as a critic,
+assessing each attempt by the LM to polish the
+program. Meanwhile, the LM plays the role of an
+actor, constantly adjusting its policies for repairing
+the program based on received rewards. During
+the inference stage, LM iteratively repaired the
+program until the exit conditions are met. The ex-
+perimental results indicated that the process-based
+feedback method can demonstrate excellent per-
+formance. With smaller model sizes, RePair still
+can rival or even surpass closed-source commercial
+large models. We believe that process-based feed-
+back is currently underexplored, and will continue
+to explore more universal methods.
+7 Limitation
+We contributed a dataset called CodeNet4Repair,
+which focuses on program repair in real com-
+petition scenarios. We acknowledge that Co-
+deNet4Repair still has limitations in evaluating
+model repair capabilities. Due to time and resource
+constraints, we were unable to collect all repair
+processes across different languages and software
+engineering domains. But there are significant sim-
+ilarities between competition and engineering sce-
+narios. This implies that our model can achieve a
+level of usability for engineering project purposes,
+and our dataset can partially evaluate its repair per-
+formance in an engineering context.
+8 Acknowledgement
+This research was partially supported by grants
+from the National Natural Science Foundation of
+China (No. 62106244), the Anhui Provincial Natu-
+ral Science Foundation (No. 2308085QF229), the
+Fundamental Research Funds for the Central Uni-
+versities (No. WK2150110034), and the CIPSC-
+SMP-Zhipu.AI Large Model Cross-Disciplinary
+Fund.
+--- page 10 ---
+References
+Rohan Anil, Andrew M Dai, Orhan Firat, Melvin John-
+son, Dmitry Lepikhin, Alexandre Passos, Siamak
+Shakeri, Emanuel Taropa, Paige Bailey, Zhifeng
+Chen, et al. 2023. Palm 2 technical report. arXiv
+preprint arXiv:2305.10403.
+Dzmitry Bahdanau, Philemon Brakel, Kelvin Xu,
+Anirudh Goyal, Ryan Lowe, Joelle Pineau, Aaron
+Courville, and Yoshua Bengio. 2016. An actor-critic
+algorithm for sequence prediction. In ICLR.
+Tom Brown, Benjamin Mann, Nick Ryder, Melanie
+Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind
+Neelakantan, Pranav Shyam, Girish Sastry, Amanda
+Askell, et al. 2020. Language models are few-shot
+learners. Advances in neural information processing
+systems, 33:1877–1901.
+Bei Chen, Fengji Zhang, Anh Nguyen, Daoguang Zan,
+Zeqi Lin, Jian-Guang Lou, and Weizhu Chen. 2022.
+Codet: Code generation with generated tests.
+Mark Chen, Jerry Tworek, et al. 2021. Evaluating large
+language models trained on code.
+Paul F Christiano, Jan Leike, Tom Brown, Miljan Mar-
+tic, Shane Legg, and Dario Amodei. 2017. Deep
+reinforcement learning from human preferences. In
+Advances in Neural Information Processing Systems,
+volume 30. Curran Associates, Inc.
+Pierre Jean A. Colombo, Chloé Clavel, and Pablo Pi-
+antanida. 2022. Infolm: A new metric to evaluate
+summarization and data2text generation. Proceed-
+ings of the AAAI Conference on Artificial Intelligence,
+36(10):10554–10562.
+Elizabeth Dinella, Hanjun Dai, Ziyang Li, Mayur Naik,
+Le Song, and Ke Wang. 2020. Hoppity: Learning
+graph transformations to detect and fix bugs in pro-
+grams. In International Conference on Learning
+Representations.
+Zhibin Gou, Zhihong Shao, Yeyun Gong, yelong shen,
+Yujiu Yang, Nan Duan, and Weizhu Chen. 2024.
+CRITIC: Large language models can self-correct
+with tool-interactive critiquing. In The Twelfth Inter-
+national Conference on Learning Representations.
+Daya Guo, Qihao Zhu, et al. 2024. Deepseek-coder:
+When the large language model meets programming
+– the rise of code intelligence.
+Rahul Gupta, Soham Pal, Aditya Kanade, and Shirish
+Shevade. 2017. Deepfix: Fixing common c language
+errors by deep learning. Proceedings of the AAAI
+Conference on Artificial Intelligence, 31(1).
+Dan Hendrycks, Steven Basart, Saurav Kadavath, Man-
+tas Mazeika, Akul Arora, Ethan Guo, Collin Burns,
+Samir Puranik, Horace He, Dawn Song, and Jacob
+Steinhardt. 2021. Measuring coding challenge com-
+petence with apps. NeurIPS.
+Jordan Hoffmann, Sebastian Borgeaud, Arthur Men-
+sch, Elena Buchatskaya, Trevor Cai, Eliza Ruther-
+ford, Diego de Las Casas, Lisa Anne Hendricks,
+Johannes Welbl, Aidan Clark, et al. 2022. Train-
+ing compute-optimal large language models. arXiv
+preprint arXiv:2203.15556.
+Zhenya Huang, Yuting Ning, Longhu Qin, Shiwei Tong,
+Shangzi Xue, Tong Xiao, Xin Lin, Jiayu Liu, Qi Liu,
+Enhong Chen, and Shijing Wang. 2024. Edunlp:
+Towards a unified and modularized library for educa-
+tional resources.
+Faria Huq, Masum Hasan, Mahim Anzum Haque Pan-
+tho, Sazan Mahbub, Anindya Iqbal, and Toufique
+Ahmed. 2020. Review4repair: Code review aided
+automatic program repairing.
+Natasha Jaques, Asma Ghandeharioun, Judy Hanwen
+Shen, Craig Ferguson, Agata Lapedriza, Noah Jones,
+Shixiang Gu, and Rosalind Picard. 2019. Way off-
+policy batch deep reinforcement learning of implicit
+human preferences in dialog.
+Nan Jiang et al. 2021. CURE: Code-aware neural ma-
+chine translation for automatic program repair. In
+2021 IEEE/ACM 43rd International Conference on
+Software Engineering (ICSE). IEEE.
+Jared Kaplan, Sam McCandlish, Tom Henighan, Tom B.
+Brown, Benjamin Chess, Rewon Child, Scott Gray,
+Alec Radford, Jeffrey Wu, and Dario Amodei. 2020.
+Scaling laws for neural language models.
+Raphaël Khoury, Anderson R. Avila, Jacob Brunelle,
+and Baba Mamadou Camara. 2023. How secure is
+code generated by chatgpt?
+Denis Kocetkov, Raymond Li, Loubna Ben allal, Jia LI,
+Chenghao Mou, Yacine Jernite, Margaret Mitchell,
+Carlos Muñoz Ferrandis, Sean Hughes, Thomas Wolf,
+Dzmitry Bahdanau, Leandro V on Werra, and Harm
+de Vries. 2023. The stack: 3 TB of permissively li-
+censed source code. Transactions on Machine Learn-
+ing Research.
+Carolin Lawrence and Stefan Riezler. 2018. Improving
+a neural semantic parser by counterfactual learning
+from human bandit feedback. In Proceedings of the
+56th Annual Meeting of the Association for Compu-
+tational Linguistics (Volume 1: Long Papers), pages
+1820–1830, Melbourne, Australia. Association for
+Computational Linguistics.
+Hung Le, Yue Wang, Akhilesh Deepak Gotmare, Silvio
+Savarese, and Steven Hoi. 2022. CodeRL: Master-
+ing code generation through pretrained models and
+deep reinforcement learning. In Advances in Neural
+Information Processing Systems.
+Raymond Li, Loubna Ben, et al. 2023. Starcoder: may
+the source be with you!
+Yujia Li, David Choi, et al. 2022. Competition-
+level code generation with alphacode. Science,
+378(6624):1092–1097.
+--- page 11 ---
+Hunter Lightman, Vineet Kosaraju, Yura Burda, Harri
+Edwards, Bowen Baker, Teddy Lee, Jan Leike, John
+Schulman, Ilya Sutskever, and Karl Cobbe. 2023.
+Let’s verify step by step.
+Jiayu Liu, Zhenya Huang, Zhiyuan Ma, Qi Liu, En-
+hong Chen, Tianhuang Su, and Haifeng Liu. 2023a.
+Guiding mathematical reasoning via mastering com-
+monsense formula knowledge. In Proceedings of
+the 29th ACM SIGKDD Conference on Knowledge
+Discovery and Data Mining, pages 1477–1488.
+Jiayu Liu, Zhenya Huang, Chengxiang Zhai, and Qi Liu.
+2023b. Learning by applying: A general framework
+for mathematical reasoning via enhancing explicit
+knowledge learning. In Proceedings of the AAAI Con-
+ference on Artificial Intelligence, volume 37, pages
+4497–4506.
+Erik Nijkamp, Bo Pang, Hiroaki Hayashi, Lifu Tu, Huan
+Wang, Yingbo Zhou, Silvio Savarese, and Caiming
+Xiong. 2023. Codegen: An open large language
+model for code with multi-turn program synthesis.
+ICLR.
+OpenAI. 2023. Gpt-4 technical report.
+Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida,
+Carroll Wainwright, Pamela Mishkin, Chong Zhang,
+Sandhini Agarwal, Katarina Slama, Alex Ray, et al.
+2022. Training language models to follow instruc-
+tions with human feedback. Advances in neural in-
+formation processing systems, 35:27730–27744.
+Ruchir Puri, David S Kung, Geert Janssen, Wei
+Zhang, Giacomo Domeniconi, Vladmir Zolotov, Ju-
+lian Dolby, Jie Chen, Mihir Choudhury, Lindsey
+Decker, et al. 2021. Project codenet: A large-scale
+ai for code dataset for learning a diversity of coding
+tasks. arXiv preprint arXiv:2105.12655, 1035.
+Hong Qian and Yang Yu. 2021. Derivative-free rein-
+forcement learning: A review. Frontiers of Computer
+Science, 15(6):156336.
+Baptiste Rozière, Jonas Gehring, Fabian Gloeckle, Sten
+Sootla, Itai Gat, Xiaoqing Ellen Tan, et al. 2024.
+Code llama: Open foundation models for code.
+John Schulman, Filip Wolski, Prafulla Dhariwal, Alec
+Radford, and Oleg Klimov. 2017. Proximal policy
+optimization algorithms.
+Aarohi Srivastava, Abhinav Rastogi, Abhishek Rao,
+et al. 2023. Beyond the imitation game: Quantifying
+and extrapolating the capabilities of language models.
+Transactions on Machine Learning Research.
+Nisan Stiennon, Long Ouyang, Jeffrey Wu, Daniel
+Ziegler, Ryan Lowe, Chelsea V oss, Alec Radford,
+Dario Amodei, and Paul F Christiano. 2020. Learn-
+ing to summarize with human feedback. Advances
+in Neural Information Processing Systems, 33:3008–
+3021.
+Hugo Touvron, Louis Martin, Kevin Stone, Peter Al-
+bert, Amjad Almahairi, Yasmine Babaei, Nikolay
+Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti
+Bhosale, et al. 2023. Llama 2: Open founda-
+tion and fine-tuned chat models. arXiv preprint
+arXiv:2307.09288.
+Michele Tufano, Jevgenija Pantiuchina, Cody Watson,
+Gabriele Bavota, and Denys Poshyvanyk. 2019. On
+learning meaningful code changes via neural machine
+translation. In 2019 IEEE/ACM 41st International
+Conference on Software Engineering (ICSE), pages
+25–36. IEEE.
+Jonathan Uesato, Nate Kushman, Ramana Kumar, Fran-
+cis Song, Noah Siegel, Lisa Wang, Antonia Creswell,
+Geoffrey Irving, and Irina Higgins. 2022. Solving
+math word problems with process- and outcome-
+based feedback.
+Guanhua Wang, Heyang Qin, Sam Ade Jacobs, Xiaoxia
+Wu, Connor Holmes, Zhewei Yao, Samyam Rajb-
+handari, Olatunji Ruwase, Feng Yan, Lei Yang, and
+Yuxiong He. 2024. ZeRO++: Extremely efficient
+collective communication for large model training.
+In The Twelfth International Conference on Learning
+Representations.
+Zhiruo Wang, Shuyan Zhou, Daniel Fried, and Gra-
+ham Neubig. 2023. Execution-based evaluation for
+open-domain code generation. In Findings of the
+Association for Computational Linguistics: EMNLP
+2023, pages 1271–1290.
+Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten
+Bosma, Fei Xia, Ed Chi, Quoc V Le, Denny Zhou,
+et al. 2022. Chain-of-thought prompting elicits rea-
+soning in large language models. Advances in Neural
+Information Processing Systems, 35:24824–24837.
+Yuxiang Wei, Chunqiu Steven Xia, and Lingming
+Zhang. 2023. Copiloting the copilots: Fusing large
+language models with completion engines for auto-
+mated program repair. In Proceedings of the 31st
+ACM Joint European Software Engineering Confer-
+ence and Symposium on the Foundations of Software
+Engineering, ESEC/FSE ’23. ACM.
+Aohan Zeng, Xiao Liu, et al. 2022. Glm-130b: An
+open bilingual pre-trained model. arXiv preprint
+arXiv:2210.02414.
+Kai Zhang, Qi Liu, Hao Qian, Biao Xiang, Qing Cui,
+Jun Zhou, and Enhong Chen. 2021. Eatn: An effi-
+cient adaptive transfer network for aspect-level sen-
+timent analysis. IEEE Transactions on Knowledge
+and Data Engineering, 35(1):377–389.
+Kai Zhang, Kun Zhang, Mengdi Zhang, Hongke Zhao,
+Qi Liu, Wei Wu, and Enhong Chen. 2022. Incorpo-
+rating dynamic semantics into pre-trained language
+model for aspect-based sentiment analysis. arXiv
+preprint arXiv:2203.16369.
+Quanjun Zhang, Chunrong Fang, Tongke Zhang, Bowen
+Yu, Weisong Sun, and Zhenyu Chen. 2023. Gamma:
+--- page 12 ---
+Revisiting template-based automated program repair
+via mask prediction. In 2023 38th IEEE/ACM Inter-
+national Conference on Automated Software Engi-
+neering (ASE), pages 535–547. IEEE.
+Qinkai Zheng, Xiao Xia, et al. 2023. Codegeex: A pre-
+trained model for code generation with multilingual
+evaluations on humaneval-x.
+Wangchunshu Zhou and Ke Xu. 2020. Learning to
+compare for better training and evaluation of open
+domain natural language generation models.
+Daniel M. Ziegler, Nisan Stiennon, Jeffrey Wu, Tom B.
+Brown, Alec Radford, Dario Amodei, Paul Chris-
+tiano, and Geoffrey Irving. 2020. Fine-tuning lan-
+guage models from human preferences.
+A Appendix
+A.1 Prompts Used in Experiments
+Input: {problem description}{vulnerable 
+program}
+Optional Input: {standard test case}
+Output: {repaired program}
+System: 
+You will play the role of a programming 
+expert.
+Given a problem and incorrect program, 
+please fix the errors in the program 
+and provide the correct program.
+Note that you need to use markdown 
+format for the code section.
+Please ensure that the program is 
+executable.
+User:
+Problem: {problem description}
+Incorrect program: {vulnerable program}
+Assistant: {output response}
+(User parses and executes the repaired 
+program to obtain the execution 
+results.)
+User:
+The program {repaired program} expects 
+the outputs: {standard test case}, but 
+the actual output is: {execution 
+result}, please refine the program 
+according to the feedback.
+Standard 
+prompt 
+template
+(Sec 3.1)
+Explicit
+feedback
+(Sec 4.8)
+Figure 7: Prompt Template for Program Repair.
+We performed supervised fine-tuning and ex-
+plicit feedback experiments following the prompt
+template shown in Figure 7. For explicit feedback,
+we also input optional standard test cases.
+A.2 Ethics Statement
+As creators and users of LLMs, we recognize the
+profound ethical responsibilities that come with
+their development and deployment. We will strive
+to avoid creating or perpetuating harm, including
+the reinforcement of bias, misinformation, and
+harmful stereotypes. We advocate for the use of
+open-source LLMs in potential ethical risk research.
+We believe that a public LLM can reveal its internal
+state, thereby avoiding possible risks.
+A.3 Detailed Case Study
+In the next page, we provide six examples of re-
+pairs. Through the examples shown, we found that
+the edit distance for single-step modifications (di-
+rectly from Step 1 to Step 3) is very high, resulting
+in tasks being too complex (e.g., having both com-
+pilation errors and semantic errors) to be completed
+in one step. However, process-based modifications
+can decompose complex tasks into simple ones and
+solve each problem gradually, thereby producing
+good repair effects.
+--- page 13 ---
+Figure 8: Case 1, an example of repair process for “Count the number of integer transition”.
+Figure 9: Case 2, an example of repair process for “Maximum possible value of x × y”.
+--- page 14 ---
+Figure 10: Case 3, an example of repair process for “The number of combinations of sticks that can form a triangle”.
+Figure 11: Case 4, an example of repair process for “A × B”.
+--- page 15 ---
+Figure 12: Case 5, an example of repair process for “Distance calculation in an undirected graph”.
+Figure 13: Case 6, an example of repair process for “Calculate the minimum number of sheets of paper required”.

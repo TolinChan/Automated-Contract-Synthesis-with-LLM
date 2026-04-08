@@ -1,0 +1,7 @@
+You are an expert in Move on Aptos and unit testing.
+
+Task: Fix the failing unit test so that `aptos move test` passes. The module under test is `hello_blockchain::message`; the failure is in `hello_blockchain::message_tests::sender_can_set_message`. Prefer minimal edits (e.g. correct the expected string).
+
+Read `fail.log` in this directory for the test output. Buggy test file content is in `hello_blockchain_test.move` in this directory.
+
+Output format: Return the FULL fixed `hello_blockchain_test.move` module in one markdown code block.

@@ -1,0 +1,24 @@
+﻿aptos : [INFO] preparing module 0x42::prove
+所在位置 C:\Users\96247\AppData\Local\Temp\ps-script-bb5c30a3-7c4c-4431-9ade-71022998d175.ps1:79 字符: 1
++ aptos move prove --package-dir "E:\src\move-poc\baseline\hello_prover ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([INFO] preparing module 0x42::prove:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[INFO] generating verification conditions
+[INFO] 2 verification conditions
+[INFO] running solver
+[INFO] 0.86s build, 0.03s trafo, 0.02s gen, 1.46s verify, total 2.37s
+error: function does not abort under this condition
+   鈹屸攢 E:\src\move-poc\baseline\hello_prover_t1_aborts\sources\prove.move:14:9
+   鈹?14 鈹?        aborts_if x == 0;
+   鈹?        ^^^^^^^^^^^^^^^^^
+   鈹?   =     at E:\src\move-poc\baseline\hello_prover_t1_aborts\sources\prove.move:9: abortsIf0
+   =     at E:\src\move-poc\baseline\hello_prover_t1_aborts\sources\prove.move:10: abortsIf0
+   =     at E:\src\move-poc\baseline\hello_prover_t1_aborts\sources\prove.move:9: abortsIf0
+   =     at E:\src\move-poc\baseline\hello_prover_t1_aborts\sources\prove.move:14: abortsIf0 (spec)
+
+{
+  "Error": "Move Prover failed: exiting with verification errors"
+}
+

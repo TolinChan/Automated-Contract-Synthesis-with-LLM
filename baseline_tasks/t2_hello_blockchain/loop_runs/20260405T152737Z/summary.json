@@ -1,0 +1,14 @@
+{
+  "task": "t2_hello_blockchain",
+  "model": "openai/gpt-4o-mini",
+  "success": true,
+  "rounds_used": 1,
+  "package_dir": "E:\\src\\move-poc\\baseline\\hello_blockchain_t2",
+  "relative_file": "sources/hello_blockchain_test.move",
+  "verify": "test",
+  "run_dir": "E:\\Automated Contract Synthesis and Repair with Large Language Models\\baseline_tasks\\t2_hello_blockchain\\loop_runs\\20260405T152737Z",
+  "initial_target_sha256": "56463b47182296396a2365f56822c4dd453e0f9051f4e9c175cb3ab1285b03ae",
+  "backup_created": "E:\\src\\move-poc\\baseline\\hello_blockchain_t2\\sources\\hello_blockchain_test.move.buggy_before_loop.bak",
+  "rounds_to_success": 1,
+  "final_target_sha256": "77f626491decd69e63729312e4642fe3f812cd715791ff7f59bcdbfdf93be608"
+}

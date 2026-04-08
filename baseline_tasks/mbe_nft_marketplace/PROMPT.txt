@@ -1,0 +1,13 @@
+You are an expert in Move on Aptos.
+
+Task: Fix the failing unit test `test_fixed_price` in module `marketplace_addr::test_marketplace`. The test output is in `fail.log` in this directory.
+
+Rules:
+- Output the **entire** file `sources/marketplace.move` as it should exist after your fix (one ```move code block). The file contains both `marketplace` and `test_marketplace` modules; preserve all unchanged code.
+- Do not change package layout or other files.
+- Use valid Move syntax only (e.g. numeric literals in asserts).
+
+Context paths (for your reasoning only):
+- Full package: E:\src\move-poc\baseline\mbe_nft_marketplace
+
+Read `fail.log` in this folder for the exact error.

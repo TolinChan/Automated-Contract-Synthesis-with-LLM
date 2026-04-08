@@ -1,0 +1,25 @@
+Looking at the fail.log, the error says "function does not abort under this condition" for `aborts_if x == 0`. This means the implementation doesn't actually abort when `x == 0`.
+
+The issue is that `abort()` without an argument isn't valid Move syntax. In Move, you need to use `abort` with an error code, like `abort 0`. The current code likely doesn't compile as intended or doesn't actually trigger an abort.
+
+Let me also look at the trace: it shows lines 9→10→9→14, suggesting the function doesn't abort properly. The fix is to use the correct abort syntax.
+
+```move
+module 0x42::prove {
+    fun plus1(x: u64): u64 {
+        x + 1
+    }
+    spec plus1 {
+        ensures result == x + 1;
+    }
+
+    fun abortsIf0(x: u64) {
+        if (x == 0) {
+            abort 0
+        };
+    }
+    spec abortsIf0 {
+        aborts_if x == 0;
+    }
+}
+```

@@ -1,0 +1,13 @@
+{
+  "task": "t1_aborts",
+  "model": "anthropic/claude-3-5-sonnet-20241022",
+  "success": false,
+  "rounds_used": 0,
+  "package_dir": "E:\\src\\move-poc\\baseline\\hello_prover_t1_aborts",
+  "relative_file": "sources/prove.move",
+  "verify": "prove",
+  "run_dir": "E:\\Automated Contract Synthesis and Repair with Large Language Models\\baseline_tasks\\t1_aborts\\loop_runs\\20260405T160840Z",
+  "initial_target_sha256": "c666c77647508c1173eb5ce525bf0cfad76384948cf81da16b0377129b8a0b72",
+  "backup_created": null,
+  "error": "http_404"
+}

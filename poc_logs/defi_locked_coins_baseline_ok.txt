@@ -1,0 +1,15 @@
+﻿aptos : [INFO] preparing module 0xdef1::locked_coins
+所在位置 C:\Users\96247\AppData\Local\Temp\ps-script-a4465332-5a58-4681-a3f4-8f8a96336151.ps1:82 字符: 7
++ $ok = aptos move prove --package-dir "E:\src\move-poc\defi" 2>&1 | Ou ...
++       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([INFO] preparin...1::locked_coins:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[INFO] generating verification conditions
+[INFO] 13 verification conditions
+[INFO] running solver
+[INFO] 5.68s build, 1.94s trafo, 0.08s gen, 3.32s verify, total 11.03s
+{
+  "Result": "Success"
+}
+

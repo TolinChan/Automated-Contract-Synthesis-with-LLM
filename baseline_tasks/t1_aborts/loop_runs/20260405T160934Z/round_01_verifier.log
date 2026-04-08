@@ -1,0 +1,11 @@
+exit_code=0
+
+{
+  "Result": "Success"
+}
+
+[INFO] preparing module 0x42::prove
+[INFO] generating verification conditions
+[INFO] 2 verification conditions
+[INFO] running solver
+[INFO] 0.53s build, 0.02s trafo, 0.02s gen, 1.00s verify, total 1.58s

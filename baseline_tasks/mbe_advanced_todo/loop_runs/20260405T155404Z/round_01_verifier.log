@@ -1,0 +1,21 @@
+exit_code=0
+
+INCLUDING DEPENDENCY AptosFramework
+INCLUDING DEPENDENCY AptosStdlib
+INCLUDING DEPENDENCY MoveStdlib
+BUILDING advanced-todo-list
+Running Move unit tests
+[debug] "todo_list_owner: @0x100"
+[debug] "todo_list_length: 1"
+[debug] "todo_content: \"New Todo\""
+[debug] "todo_completed: false"
+[debug] "todo_completed: true"
+[ PASS    ] 0x111::advanced_todo_list::test_end_to_end
+[ PASS    ] 0x111::advanced_todo_list::test_end_to_end_2_todo_lists
+[ PASS    ] 0x111::advanced_todo_list::test_todo_already_completed
+[ PASS    ] 0x111::advanced_todo_list::test_todo_does_not_exist
+[ PASS    ] 0x111::advanced_todo_list::test_todo_list_does_not_exist
+Test result: OK. Total tests: 5; passed: 5; failed: 0
+{
+  "Result": "Success"
+}

@@ -1,0 +1,14 @@
+{
+  "task": "mbe_fa_vesting",
+  "model": "openai/gpt-4o-mini",
+  "success": true,
+  "rounds_used": 1,
+  "package_dir": "E:\\src\\move-poc\\baseline\\mbe_fa_vesting",
+  "relative_file": "tests/vesting_tests.move",
+  "verify": "test",
+  "run_dir": "E:\\Automated Contract Synthesis and Repair with Large Language Models\\baseline_tasks\\mbe_fa_vesting\\loop_runs\\20260405T155306Z",
+  "initial_target_sha256": "6d60e1bbd97414e271528ebde2ac67122c3dbf2e80493f8341131d6c4bf59658",
+  "backup_created": "E:\\src\\move-poc\\baseline\\mbe_fa_vesting\\tests\\vesting_tests.move.buggy_before_loop.bak",
+  "rounds_to_success": 1,
+  "final_target_sha256": "57fc47ae124233bc831d124c7deedfac0828b4890887ff996830e8ca4f9e6ee8"
+}

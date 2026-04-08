@@ -1,0 +1,14 @@
+exit_code=0
+
+INCLUDING DEPENDENCY AptosFramework
+INCLUDING DEPENDENCY AptosStdlib
+INCLUDING DEPENDENCY MoveStdlib
+BUILDING Examples
+Running Move unit tests
+[debug] "Running test for sender_can_set_message..."
+[ PASS    ] 0xcafe::message_tests::sender_can_set_message
+[ PASS    ] 0xcafe::message::sender_can_set_message
+Test result: OK. Total tests: 2; passed: 2; failed: 0
+{
+  "Result": "Success"
+}

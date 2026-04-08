@@ -1,0 +1,34 @@
+﻿INCLUDING DEPENDENCY AptosFramework
+INCLUDING DEPENDENCY AptosStdlib
+INCLUDING DEPENDENCY MoveStdlib
+BUILDING advanced-todo-list
+Running Move unit tests
+[debug] "todo_list_owner: @0x100"
+[debug] "todo_list_length: 1"
+[ FAIL    ] 0x111::advanced_todo_list::test_end_to_end
+[ PASS    ] 0x111::advanced_todo_list::test_end_to_end_2_todo_lists
+[ PASS    ] 0x111::advanced_todo_list::test_todo_already_completed
+[ PASS    ] 0x111::advanced_todo_list::test_todo_does_not_exist
+[ PASS    ] 0x111::advanced_todo_list::test_todo_list_does_not_exist
+
+Test failures:
+
+Failures in 0x111::advanced_todo_list:
+
+鈹屸攢鈹€ test_end_to_end 鈹€鈹€鈹€鈹€鈹€鈹€
+鈹?error[E11001]: test failure
+鈹?    鈹屸攢 E:\src\move-poc\baseline\mbe_advanced_todo\sources\advanced_todo_list.move:195:9
+鈹?    鈹?鈹?180 鈹?    public entry fun test_end_to_end(admin: signer) acquires TodoList, UserTodoListCounter {
+鈹?    鈹?                     --------------- In this function in 0x111::advanced_todo_list
+鈹?    路
+鈹?195 鈹?        assert!(todo_list_length == 2, 6); // BUG: should be 1 todo in list.
+鈹?    鈹?        ^^^^^^ Test was not expected to error, but it aborted with code 6 originating in the module 0000000000000000000000000000000000000000000000000000000000000111::advanced_todo_list rooted here
+鈹?
+鈹?
+鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+Test result: FAILED. Total tests: 5; passed: 4; failed: 1
+{
+  "Error": "Move unit tests failed"
+}
+

@@ -1,0 +1,33 @@
+You are an expert in Move and the Move Prover on Aptos.
+
+Task: Fix the IMPLEMENTATION only so that `aptos move prove` succeeds. Do NOT modify any `spec` blocks.
+
+Context:
+- Module path on disk: E:\src\move-poc\baseline\hello_prover_t0_plus1\sources\prove.move
+- The buggy source is also copied below as `prove.move`.
+
+Use the frozen Prover output in `fail.log` in this same directory.
+
+Buggy source (`prove.move` in this directory, also inlined below):
+
+<<<CODE_START
+module 0x42::prove {
+    fun plus1(x: u64): u64 {
+        x+2
+    }
+    spec plus1 {
+        ensures result == x+1;
+    }
+
+    fun abortsIf0(x: u64) {
+        if (x == 0) {
+            abort(0)
+        };
+    }
+    spec abortsIf0 {
+        aborts_if x == 0;
+    }
+}
+CODE_END>>>
+
+Output format: Return the FULL fixed `module 0x42::prove { ... }` in a single markdown code block.

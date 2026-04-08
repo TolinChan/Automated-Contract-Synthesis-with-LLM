@@ -1,0 +1,3 @@
+{"event": "request_round_start", "round": 1, "num_messages": 2}
+{"event": "assistant", "round": 1, "content_preview": "```move\n#[test_only]\nmodule vesting::vesting_tests {\n    use aptos_framework::account;\n    use aptos_framework::timestamp;\n    use aptos_framework::primary_fungible_store;\n    use aptos_framework::object::{Self, Object};\n    use aptos_framework::fungible_asset::{Self, Metadata};\n\n    use std::signer;\n    use std::option;\n    use std::string;\n\n    use vesting::vesting;\n\n    fun create_and_mint_dummy_token(\n        creator: &signer, initial_amount: u64\n    ): Object<Metadata> {\n        let creator"}
+{"event": "verifier", "round": 1, "exit_code": 0}

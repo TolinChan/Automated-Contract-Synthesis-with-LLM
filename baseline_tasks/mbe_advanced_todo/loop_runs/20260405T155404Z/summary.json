@@ -1,0 +1,14 @@
+{
+  "task": "mbe_advanced_todo",
+  "model": "openai/gpt-4o-mini",
+  "success": true,
+  "rounds_used": 1,
+  "package_dir": "E:\\src\\move-poc\\baseline\\mbe_advanced_todo",
+  "relative_file": "sources/advanced_todo_list.move",
+  "verify": "test",
+  "run_dir": "E:\\Automated Contract Synthesis and Repair with Large Language Models\\baseline_tasks\\mbe_advanced_todo\\loop_runs\\20260405T155404Z",
+  "initial_target_sha256": "a3f909cc50c316971d81a4cb4e6258de024f3f34145eb4b6f1519ab38c3192b1",
+  "backup_created": "E:\\src\\move-poc\\baseline\\mbe_advanced_todo\\sources\\advanced_todo_list.move.buggy_before_loop.bak",
+  "rounds_to_success": 1,
+  "final_target_sha256": "d14556a2cda5205ef9bf90e39e1fe40aff7a688a1616bda4537586a82c99facc"
+}

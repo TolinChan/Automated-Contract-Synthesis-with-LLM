@@ -1,0 +1,15 @@
+﻿aptos : [INFO] preparing module 0x42::prove
+所在位置 C:\Users\96247\AppData\Local\Temp\ps-script-098eb5c8-a69d-4053-ac92-aae29f7c6e58.ps1:84 字符: 13
++ $baseline = aptos move prove 2>&1 | Out-String
++             ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([INFO] preparing module 0x42::prove:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[INFO] generating verification conditions
+[INFO] 2 verification conditions
+[INFO] running solver
+[INFO] 0.54s build, 0.02s trafo, 0.02s gen, 0.92s verify, total 1.50s
+{
+  "Result": "Success"
+}
+

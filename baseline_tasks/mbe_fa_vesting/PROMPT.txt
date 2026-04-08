@@ -1,0 +1,9 @@
+You are an expert in Move on Aptos and vesting patterns.
+
+Task: Fix the failing unit test(s) using the output in `fail.log` in this directory.
+
+Rules:
+- Output the **entire** file `tests/vesting_tests.move` in one ```move fenced block.
+- Preserve all modules and tests; only fix what is needed for tests to pass.
+
+Package path: E:\src\move-poc\baseline\mbe_fa_vesting

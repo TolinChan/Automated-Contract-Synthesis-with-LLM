@@ -1,0 +1,7 @@
+You are an expert in Move and the Move Prover on Aptos.
+
+Task: Fix the IMPLEMENTATION of `abortsIf0` only so that `aptos move prove` succeeds. Do NOT modify any `spec` blocks.
+
+Use the frozen Prover output in `fail.log` (same directory as this file) and the buggy `prove.move` (same directory).
+
+Output format: Return the FULL fixed `module 0x42::prove { ... }` in one markdown code block.

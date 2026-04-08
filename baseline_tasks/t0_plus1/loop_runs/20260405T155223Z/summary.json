@@ -1,0 +1,14 @@
+{
+  "task": "t0_plus1",
+  "model": "openai/gpt-4o-mini",
+  "success": true,
+  "rounds_used": 1,
+  "package_dir": "E:\\src\\move-poc\\baseline\\hello_prover_t0_plus1",
+  "relative_file": "sources/prove.move",
+  "verify": "prove",
+  "run_dir": "E:\\Automated Contract Synthesis and Repair with Large Language Models\\baseline_tasks\\t0_plus1\\loop_runs\\20260405T155223Z",
+  "initial_target_sha256": "b630366b75b8cbc0c3069b93832e8a22126b2bf256cf192cd0c196949c4c4a80",
+  "backup_created": "E:\\src\\move-poc\\baseline\\hello_prover_t0_plus1\\sources\\prove.move.buggy_before_loop.bak",
+  "rounds_to_success": 1,
+  "final_target_sha256": "02d147183bd5051cf07c837f734e88f77a15bac5fad7caf1362cc6fa085a310d"
+}

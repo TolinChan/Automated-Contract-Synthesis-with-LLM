@@ -1,0 +1,40 @@
+﻿INCLUDING DEPENDENCY AptosFramework
+INCLUDING DEPENDENCY AptosStdlib
+INCLUDING DEPENDENCY MoveStdlib
+BUILDING vesting
+Running Move unit tests
+[ PASS    ] 0x123::vesting_tests::test_cancel_vesting_after_completion
+[ PASS    ] 0x123::vesting_tests::test_cancel_vesting_before_start
+[ PASS    ] 0x123::vesting_tests::test_cancel_vesting_midway
+[ PASS    ] 0x123::vesting_tests::test_claim_before_vesting_starts
+[ PASS    ] 0x123::vesting_tests::test_claim_vested_tokens_full_duration
+[ PASS    ] 0x123::vesting_tests::test_claim_vested_tokens_partial
+[ PASS    ] 0x123::vesting_tests::test_claim_zero_tokens
+[ FAIL    ] 0x123::vesting_tests::test_create_vesting_success
+[ PASS    ] 0x123::vesting_tests::test_unauthorized_cancel
+[ PASS    ] 0x123::vesting_tests::test_unauthorized_claim
+[ PASS    ] 0x123::vesting_tests::test_vesting_with_cliff_25_percent
+[ PASS    ] 0x123::vesting_tests::test_zero_duration
+[ PASS    ] 0x123::vesting_tests::test_zero_total_amount
+
+Test failures:
+
+Failures in 0x123::vesting_tests:
+
+鈹屸攢鈹€ test_create_vesting_success 鈹€鈹€鈹€鈹€鈹€鈹€
+鈹?error[E11001]: test failure
+鈹?   鈹屸攢 E:\src\move-poc\baseline\mbe_fa_vesting\tests\vesting_tests.move:95:9
+鈹?   鈹?鈹?68 鈹?    fun test_create_vesting_success(
+鈹?   鈹?        --------------------------- In this function in 0x123::vesting_tests
+鈹?   路
+鈹?95 鈹?        assert!(vestings.length() == 2, 1); // BUG: should be 1 vesting.
+鈹?   鈹?        ^^^^^^ Test was not expected to error, but it aborted with code 1 originating in the module 0000000000000000000000000000000000000000000000000000000000000123::vesting_tests rooted here
+鈹?
+鈹?
+鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+Test result: FAILED. Total tests: 13; passed: 12; failed: 1
+{
+  "Error": "Move unit tests failed"
+}
+

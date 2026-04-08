@@ -1,0 +1,5 @@
+exit_code=1
+
+{
+  "Error": "Move Prover failed: exiting with 1 error in compilation"
+}

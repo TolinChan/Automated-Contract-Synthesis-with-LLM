@@ -1,0 +1,30 @@
+﻿INCLUDING DEPENDENCY AptosFramework
+INCLUDING DEPENDENCY AptosStdlib
+INCLUDING DEPENDENCY MoveStdlib
+BUILDING Examples
+Running Move unit tests
+[debug] "Running test for sender_can_set_message..."
+[ FAIL    ] 0xcafe::message_tests::sender_can_set_message
+[ PASS    ] 0xcafe::message::sender_can_set_message
+
+Test failures:
+
+Failures in 0xcafe::message_tests:
+
+鈹屸攢鈹€ sender_can_set_message 鈹€鈹€鈹€鈹€鈹€鈹€
+鈹?error[E11001]: test failure
+鈹?   鈹屸攢 E:\src\move-poc\baseline\hello_blockchain_t2\sources\hello_blockchain_test.move:21:9
+鈹?   鈹?鈹?15 鈹?    public entry fun sender_can_set_message() {
+鈹?   鈹?                     ---------------------- In this function in 0xcafe::message_tests
+鈹?   路
+鈹?21 鈹?        assert!(
+鈹?   鈹?        ^^^^^^ Test was not expected to error, but it aborted with code 0 originating in the module 000000000000000000000000000000000000000000000000000000000000cafe::message_tests rooted here
+鈹?
+鈹?
+鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+Test result: FAILED. Total tests: 2; passed: 1; failed: 1
+{
+  "Error": "Move unit tests failed"
+}
+

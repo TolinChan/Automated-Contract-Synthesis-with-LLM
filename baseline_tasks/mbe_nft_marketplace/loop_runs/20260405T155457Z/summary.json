@@ -1,0 +1,14 @@
+{
+  "task": "mbe_nft_marketplace",
+  "model": "openai/gpt-4o-mini",
+  "success": true,
+  "rounds_used": 1,
+  "package_dir": "E:\\src\\move-poc\\baseline\\mbe_nft_marketplace",
+  "relative_file": "sources/marketplace.move",
+  "verify": "test",
+  "run_dir": "E:\\Automated Contract Synthesis and Repair with Large Language Models\\baseline_tasks\\mbe_nft_marketplace\\loop_runs\\20260405T155457Z",
+  "initial_target_sha256": "55a0faa3ff5da01bdc84facc18908093d038476c2f42a9fa640b50bb591ec8e7",
+  "backup_created": "E:\\src\\move-poc\\baseline\\mbe_nft_marketplace\\sources\\marketplace.move.buggy_before_loop.bak",
+  "rounds_to_success": 1,
+  "final_target_sha256": "43e6dfea645475f314c25d88257a12f5ae41faa6bf48a50c2970c2a15d841615"
+}

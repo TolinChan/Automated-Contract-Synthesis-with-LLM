@@ -1,0 +1,24 @@
+exit_code=0
+
+INCLUDING DEPENDENCY AptosFramework
+INCLUDING DEPENDENCY AptosStdlib
+INCLUDING DEPENDENCY MoveStdlib
+BUILDING vesting
+Running Move unit tests
+[ PASS    ] 0x123::vesting_tests::test_cancel_vesting_after_completion
+[ PASS    ] 0x123::vesting_tests::test_cancel_vesting_before_start
+[ PASS    ] 0x123::vesting_tests::test_cancel_vesting_midway
+[ PASS    ] 0x123::vesting_tests::test_claim_before_vesting_starts
+[ PASS    ] 0x123::vesting_tests::test_claim_vested_tokens_full_duration
+[ PASS    ] 0x123::vesting_tests::test_claim_vested_tokens_partial
+[ PASS    ] 0x123::vesting_tests::test_claim_zero_tokens
+[ PASS    ] 0x123::vesting_tests::test_create_vesting_success
+[ PASS    ] 0x123::vesting_tests::test_unauthorized_cancel
+[ PASS    ] 0x123::vesting_tests::test_unauthorized_claim
+[ PASS    ] 0x123::vesting_tests::test_vesting_with_cliff_25_percent
+[ PASS    ] 0x123::vesting_tests::test_zero_duration
+[ PASS    ] 0x123::vesting_tests::test_zero_total_amount
+Test result: OK. Total tests: 13; passed: 13; failed: 0
+{
+  "Result": "Success"
+}

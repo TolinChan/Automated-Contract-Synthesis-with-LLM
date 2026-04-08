@@ -1,0 +1,9 @@
+You are an expert in Move on Aptos.
+
+Task: Fix the failing unit test using `fail.log` in this directory. The failure is in `test_end_to_end` (or related assertions).
+
+Rules:
+- Output the **entire** file `sources/advanced_todo_list.move` in one ```move fenced block.
+- Keep all modules, entry functions, and other tests intact except necessary fixes.
+
+Package path: E:\src\move-poc\baseline\mbe_advanced_todo
