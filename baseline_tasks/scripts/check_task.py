@@ -26,6 +26,17 @@ PACKAGES = {
 
 _DEFAULT_BOOGIE = Path(r"C:\Users\96247\.dotnet\tools\boogie.exe")
 _DEFAULT_Z3 = Path(r"E:\tools\z3_extract\z3-4.13.0-x64-win\bin\z3.exe")
+_WINGET_APTOS_EXE = Path(
+    r"C:\Users\96247\AppData\Local\Microsoft\WinGet\Packages"
+    r"\AptosCore.aptos_Microsoft.Winget.Source_8wekyb3d8bbwe\aptos.exe"
+)
+
+
+def _aptos() -> str:
+    """Return full path to aptos.exe if the winget install exists, else 'aptos'."""
+    if _WINGET_APTOS_EXE.is_file():
+        return str(_WINGET_APTOS_EXE)
+    return "aptos"
 
 
 def main() -> int:
@@ -50,10 +61,11 @@ def main() -> int:
         if not env.get("Z3_EXE") and _DEFAULT_Z3.is_file():
             env["Z3_EXE"] = str(_DEFAULT_Z3)
 
+    aptos = _aptos()
     if args.task_id == "t2_hello_blockchain":
-        cmd = ["aptos", "move", "test", "--package-dir", str(pkg)]
+        cmd = [aptos, "move", "test", "--package-dir", str(pkg)]
     else:
-        cmd = ["aptos", "move", "prove", "--package-dir", str(pkg)]
+        cmd = [aptos, "move", "prove", "--package-dir", str(pkg)]
 
     proc = subprocess.run(cmd, env=env)
     return int(proc.returncode)

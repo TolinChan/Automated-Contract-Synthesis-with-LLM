@@ -21,6 +21,17 @@ from move_fence import ensure_trailing_newline, extract_first_move_fence
 SCRIPTS_DIR = Path(__file__).resolve().parent
 BASELINE_TASKS = SCRIPTS_DIR.parent
 
+_WINGET_APTOS_EXE = Path(
+    r"C:\Users\96247\AppData\Local\Microsoft\WinGet\Packages"
+    r"\AptosCore.aptos_Microsoft.Winget.Source_8wekyb3d8bbwe\aptos.exe"
+)
+
+
+def _aptos() -> str:
+    if _WINGET_APTOS_EXE.is_file():
+        return str(_WINGET_APTOS_EXE)
+    return "aptos"
+
 MBE_TASKS: dict[str, dict[str, str]] = {
     "mbe_nft_marketplace": {
         "package_dir": r"E:\src\move-poc\baseline\mbe_nft_marketplace",
@@ -69,7 +80,7 @@ def main() -> int:
 
     env = os.environ.copy()
     proc = subprocess.run(
-        ["aptos", "move", "test", "--package-dir", str(pkg)],
+        [_aptos(), "move", "test", "--package-dir", str(pkg)],
         env=env,
     )
     return int(proc.returncode)

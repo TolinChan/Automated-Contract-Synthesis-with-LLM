@@ -25,6 +25,16 @@ from move_fence import ensure_trailing_newline, extract_first_move_fence
 
 _DEFAULT_BOOGIE = Path(r"C:\Users\96247\.dotnet\tools\boogie.exe")
 _DEFAULT_Z3 = Path(r"E:\tools\z3_extract\z3-4.13.0-x64-win\bin\z3.exe")
+_WINGET_APTOS_EXE = Path(
+    r"C:\Users\96247\AppData\Local\Microsoft\WinGet\Packages"
+    r"\AptosCore.aptos_Microsoft.Winget.Source_8wekyb3d8bbwe\aptos.exe"
+)
+
+
+def _aptos() -> str:
+    if _WINGET_APTOS_EXE.is_file():
+        return str(_WINGET_APTOS_EXE)
+    return "aptos"
 
 SYSTEM_PROMPT = """Follow the user instructions exactly. Output Move code in a markdown fence when asked.
 You may receive multiple rounds of feedback from a verifier (aptos move prove or aptos move test). Each time, output the complete replacement file in a single ```move fenced block — no auto-fix is applied; the file must compile and pass verification."""
@@ -58,11 +68,12 @@ def prover_env() -> dict[str, str]:
 
 
 def run_verifier(cfg: LoopTask) -> tuple[int, str]:
+    aptos = _aptos()
     if cfg.verify == "test":
-        cmd = ["aptos", "move", "test", "--package-dir", str(cfg.package_dir)]
-        env = os.environ.copy()
+        cmd = [aptos, "move", "test", "--package-dir", str(cfg.package_dir)]
+        env = prover_env()
     else:
-        cmd = ["aptos", "move", "prove", "--package-dir", str(cfg.package_dir)]
+        cmd = [aptos, "move", "prove", "--package-dir", str(cfg.package_dir)]
         env = prover_env()
     proc = subprocess.run(
         cmd,
