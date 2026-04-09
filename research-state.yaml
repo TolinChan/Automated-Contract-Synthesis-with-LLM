@@ -1,0 +1,105 @@
+project: "Automated Contract Synthesis and Repair with LLMs"
+research_question: "Can a coding agent driven by formal Move pre/postcondition specs iteratively repair injected bugs in Aptos Move smart contracts? How does iterative verifier-feedback (rounds_to_success) compare to single-shot (Pass@1)?"
+started: "2026-04-09"
+phase: "bootstrap"
+
+literature_status:
+  core_papers:
+    - id: SYSSPEC_FAST26
+      title: "Sharpen the Spec, Cut the Code: A Case for Generative File System with SYSSPEC"
+      venue: "FAST '26"
+      status: read
+      notes: "笔记_FAST26_SYSSPEC.md"
+    - id: RePair_2408.11296
+      title: "RePair: Automated Program Repair with Process-based Feedback"
+      venue: "arXiv 2024"
+      status: read
+      notes: "笔记_RePair_CodeNet4Repair.md"
+    - id: Clover_2310.17807
+      title: "Clover: Closed-Loop Verifiable Code Generation"
+      venue: "arXiv 2024 (Stanford)"
+      status: read
+      notes: "笔记_Clover.md"
+  phase2_papers:
+    - id: Reflexion_2303.11366
+      title: "Reflexion: Language Agents with Verbal Reinforcement Learning"
+      venue: "NeurIPS 2023"
+      status: read
+      notes: "笔记_Phase2_补充.md"
+    - id: SWEagent_2405.15793
+      title: "SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering"
+      venue: "NeurIPS 2024"
+      status: read
+      notes: "笔记_Phase2_补充.md"
+    - id: SmartInv_2411.13073
+      title: "SmartInv: Multimodal Learning for Smart Contract Invariant Inference"
+      venue: "ICSE 2024 / IEEE S&P 2025"
+      status: read
+      notes: "literature/SmartInv_2411.13073.md"
+    - id: DafnyBench_2406.08467
+      title: "DafnyBench: A Benchmark for Formal Software Verification"
+      venue: "arXiv 2024"
+      status: read
+      notes: "literature/DafnyBench_2406.08467.md"
+      key_number: "GPT-4o: 64% pass@1 on Dafny tasks — benchmark baseline for our Move analog"
+    - id: PropertyGPT_2405.02580
+      title: "PropertyGPT: LLM-driven Formal Verification of Smart Contracts through Retrieval-Augmented Property Generation"
+      venue: "arXiv 2024"
+      status: read
+      notes: "literature/PropertyGPT_2405.02580.md"
+      key_note: "Structurally closest end-to-end analogue (RAG+gen+Certora loop); differs in Solidity/CVL vs Move/Move Spec"
+
+hypotheses:
+  - id: H1
+    statement: "Iterative verifier-feedback (Baseline B, coding agent) achieves higher task pass rate than single-shot API (Baseline A, Pass@1) across all 6 tasks."
+    prediction: "rounds_to_success pass rate > Pass@1 pass rate, especially on M1-M3."
+    status: untested
+  - id: H2
+    statement: "Raw Move Prover fail.log (with Z3 counterexamples) is sufficient for LLMs to identify and fix the bug without a dedicated Error Translation layer."
+    prediction: "T0/T1 repair succeeds without preprocessing; M1-M3 may fail due to verbose output."
+    status: partially_supported_by_poc
+  - id: H3
+    statement: "Model capability (GPT-4o vs Claude Sonnet vs weaker models) matters more for complex tasks (M1-M3) than for simple tasks (T0-T2)."
+    prediction: "T0-T2 Pass@1 rates converge across models; M1-M3 diverge."
+    status: untested
+  - id: H4
+    statement: "Adding a Reflexion-style verbal reflection step between rounds reduces rounds_to_success on M1-M3 tasks."
+    prediction: "Reflexion variant reaches success in fewer rounds on complex tasks."
+    status: untested
+
+experiments:
+  completed:
+    - id: poc_hello_prover
+      description: "Manual PoC: inject plus2 bug into hello_prover, run Move Prover, feed fail.log to LLM"
+      result: "LLM fixed T0 correctly in 1 round with raw fail.log"
+      location: "poc_logs/ + poc_llm_trial.md"
+    - id: poc_defi_locked_coins
+      description: "Manual PoC: inject bug into locked_coins, run prover"
+      result: "Prover proved nothing (no spec) — revealed 'no spec → no proof' constraint"
+      location: "poc_logs/"
+  planned:
+    - id: exp_baseline_A_T0T2
+      hypothesis: H1
+      description: "Run invoke_ofox_once.py on T0, T1, T2 with default model; measure Pass@1"
+      status: pending
+    - id: exp_baseline_A_M1M3
+      hypothesis: H1
+      description: "Run invoke_ofox_once.py on M1, M2, M3; measure Pass@1"
+      status: pending
+    - id: exp_baseline_B_loop_T0T2
+      hypothesis: H1
+      description: "Run agent_verify_loop.py on T0, T1, T2 (max 5 rounds); measure rounds_to_success"
+      status: pending
+    - id: exp_baseline_B_loop_M1M3
+      hypothesis: H1
+      description: "Run agent_verify_loop.py on M1, M2, M3 (max 8 rounds); measure rounds_to_success"
+      status: pending
+
+current_direction: "INNER LOOP — run Pass@1 baseline experiments on T0-T2, then M1-M3"
+
+next_action: "Run exp_baseline_A_T0T2: invoke_ofox_once.py on T0/T1/T2, then check_task.py; record Pass@1"
+
+proxy_metric: "pass_rate (fraction of tasks passing verification within allowed rounds)"
+baseline_metric: "TBD after first runs"
+
+key_findings_summary: "PoC shows the loop is feasible for simple tasks. Systematic benchmarking not yet done. Error translation need unknown."
