@@ -43,18 +43,27 @@ Can a coding agent driven by formal pre/postcondition specs (Move Prover) iterat
 ## Lessons and Constraints
 
 - **Boogie must be exactly 3.5.1.x** — higher versions rejected by Aptos CLI. Version mismatch is the most common environment failure.
+- **aptos.exe is NOT on PATH in bash/subprocess** — must use full WinGet path: `C:\Users\96247\AppData\Local\Microsoft\WinGet\Packages\AptosCore.aptos_Microsoft.Winget.Source_8wekyb3d8bbwe\aptos.exe`. Fixed in all three scripts via `_aptos()` helper (commit 79401af).
 - **T2/M-series use `aptos move test` not `aptos move prove`** — agent must route correctly based on task type.
 - **"No spec → no proof"**: `defi::locked_coins` showed that Move Prover only checks what's specified. Tasks with sparse annotations may show Pass@1=100% for the wrong reason.
 - **Move package paths are hardcoded to E: drive** — any portability work requires updating `loop_tasks.py` constants.
 - **Do not manually fix model output** before running `apply_and_check_mbe.py` — this would contaminate the Pass@1 metric.
+- **Current input layer is NOT spec-driven** — `invoke_ofox_once.py` and `agent_verify_loop.py` send `PROMPT.txt + raw fail.log + source`, which is "here's broken code and an error, fix it." This is test/error-driven, not spec-driven. The `build_initial_user_message()` function needs a complete redesign.
+- **T0/T1 vs T2/M are fundamentally different tasks**:
+  - T0/T1: true formal spec-driven — `spec {}` blocks with `ensures`/`aborts_if` are the ground truth; Move Prover (Boogie+Z3) does mathematical proof
+  - T2/M1–M3: test-driven — `assert!()` in unit tests; `aptos move test` just runs tests
+  - Input format redesign must treat these two classes differently
+- **fail.log has noise** — raw PowerShell output includes `NativeCommandError` headers, garbled paths, PS script paths. Needs a cleaning/extraction layer before sending to LLM.
+- **Source code is duplicated in current prompts** — PROMPT.txt already inlines the source via `<<<CODE_START...CODE_END>>>`, and the script appends it again as `--- source file ---`. This wastes context and may confuse the model.
 
 ## Open Questions
 
-1. **Error translation layer**: Is raw `fail.log` sufficient for LLMs to repair T0/T1, or do we need a preprocessing step (truncate, extract counterexample line, add natural language explanation)?
-2. **Spec coverage gap**: For M1–M3, are the specs complete enough to force the agent to fix the actual bug, or will the agent find a trivially passing but semantically wrong patch?
-3. **Model comparison**: How do GPT-4o, Claude Sonnet, and Gemini compare on Move (a low-resource language with little training data)?
-4. **Context window pressure**: Multi-module packages like M1–M3 may exceed single-context limits. How does the agent handle cross-file reasoning?
-5. **Reflexion-style memory**: Would adding a verbal reflection step between rounds reduce the rounds_to_success on complex tasks?
+1. **Input layer redesign**: What is the right context format for spec-driven repair? Options include: (a) spec block front-and-center with semantic explanation, (b) Clover-style three-way consistency framing, (c) SWE-agent ACI-style structured tool output. Need to brainstorm and evaluate.
+2. **Error translation layer**: Is raw `fail.log` sufficient, or do we need a preprocessing step to extract the counterexample line, strip PS noise, and add natural language explanation?
+3. **Spec coverage gap**: For M1–M3, are the specs complete enough to force the agent to fix the actual bug, or will the agent find a trivially passing but semantically wrong patch?
+4. **Model comparison**: How do GPT-4o, Claude Sonnet, and Gemini compare on Move (a low-resource language with little training data)?
+5. **Context window pressure**: Multi-module packages like M1–M3 may exceed single-context limits. How does the agent handle cross-file reasoning?
+6. **Reflexion-style memory**: Would adding a verbal reflection step between rounds reduce the rounds_to_success on complex tasks?
 
 ## Optimization Trajectory
 

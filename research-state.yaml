@@ -95,9 +95,18 @@ experiments:
       description: "Run agent_verify_loop.py on M1, M2, M3 (max 8 rounds); measure rounds_to_success"
       status: pending
 
-current_direction: "INNER LOOP — run Pass@1 baseline experiments on T0-T2, then M1-M3"
+current_direction: "DESIGN — redesign spec-driven input layer before running experiments"
 
-next_action: "Run exp_baseline_A_T0T2: invoke_ofox_once.py on T0/T1/T2, then check_task.py; record Pass@1"
+next_action: "Use brainstorming-research-ideas skill to design new context format for T0/T1 (spec-driven) and T2/M (test-driven) separately; then rewrite build_initial_user_message() and PROMPT.txt templates"
+
+key_design_decision_needed:
+  problem: "Current input to LLM is error-driven (PROMPT + raw fail.log + source). Should be spec-driven (spec block as ground truth, implementation must satisfy it)."
+  t0_t1_approach: "spec {} block is the formal contract; Prover gives mathematical counterexample. Input should foreground the spec semantics."
+  t2_m_approach: "assert!() in unit tests is the oracle. Input is closer to test-driven repair — different framing needed."
+  known_issues:
+    - "Source code duplicated in current prompts (PROMPT.txt already inlines it)"
+    - "fail.log has PS noise (NativeCommandError headers, garbled paths)"
+    - "No semantic explanation of what the spec means"
 
 proxy_metric: "pass_rate (fraction of tasks passing verification within allowed rounds)"
 baseline_metric: "TBD after first runs"
