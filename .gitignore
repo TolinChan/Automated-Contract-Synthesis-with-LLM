@@ -5,3 +5,7 @@
 **/model_patch.txt
 __pycache__/
 *.py[cod]
+
+# Claude Code
+CLAUDE.md
+.claude/

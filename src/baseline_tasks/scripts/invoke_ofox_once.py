@@ -43,8 +43,8 @@ MBE_TASKS = {
 
 
 def project_root() -> Path:
-    # .../baseline_tasks/scripts/invoke_ofox_once.py -> repo root
-    return Path(__file__).resolve().parent.parent.parent
+    # .../src/baseline_tasks/scripts/invoke_ofox_once.py -> repo root
+    return Path(__file__).resolve().parent.parent.parent.parent
 
 
 def load_api_key_from_dotenv() -> None:

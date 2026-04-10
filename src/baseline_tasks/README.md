@@ -1,6 +1,6 @@
 # Coding Agent 基线任务（T0–T2 + M1–M3）
 
-与 [move_examples_baseline_规划.md](../move_examples_baseline_规划.md) 及实施计划一致：每个任务在 **E 盘**有独立 Move 包，本目录存放 **冻结 Prompt、失败日志副本、结果模板**。
+与 [move_examples_baseline_规划.md](../../plans/move_examples_baseline_规划.md) 及实施计划一致：每个任务在 **E 盘**有独立 Move 包，本目录存放 **冻结 Prompt、失败日志副本、结果模板**。
 
 ## 路径
 
@@ -15,7 +15,7 @@
 
 ## 环境
 
-- 设置 `BOOGIE_EXE`、`Z3_EXE`（见 [ENV_SETUP.md](../ENV_SETUP.md)）。
+- 设置 `BOOGIE_EXE`、`Z3_EXE`（见 [ENV_SETUP.md](../../doc/ENV_SETUP.md)）。
 - 判分（Python 3，仅标准库）：`python scripts/check_task.py --task-id t0_plus1`（或 `t1_aborts` / `t2_hello_blockchain`）。
 - **M1–M3（move-by-examples 副本）**：机械应用 + `aptos move test`，**不做**语法自动纠错：  
   `python scripts/apply_and_check_mbe.py --task mbe_nft_marketplace`（或 `mbe_fa_vesting` / `mbe_advanced_todo`；可选 `--response path\to\model_response.txt`）。默认读取对应 `baseline_tasks/<task>/model_response.txt`。
