@@ -1,0 +1,17 @@
+{
+  "id": "coin_extract",
+  "passed": true,
+  "rounds_to_success": 1,
+  "feedback_rounds_used": 0,
+  "feedback_rounds_budget": 3,
+  "history": [
+    {
+      "round": 0,
+      "passed": true,
+      "exit_code": 0,
+      "prove_time_sec": 19.6,
+      "error_summary": "",
+      "extraction_failed": false
+    }
+  ]
+}

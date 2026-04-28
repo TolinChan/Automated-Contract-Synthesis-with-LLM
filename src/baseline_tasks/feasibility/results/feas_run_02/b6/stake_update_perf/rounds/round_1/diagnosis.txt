@@ -1,0 +1,5 @@
+CATEGORY: ghost_var_missing
+
+ROOT_CAUSE: The `ensures` clause references an undefined identifier `ghost_proposer_idx` instead of the function parameter `proposer_index`, so the prover cannot construct a valid verification condition (manifesting as an out-of-resources/timeout during condition generation).
+
+FIX_INSTRUCTION: Replace every occurrence of `ghost_proposer_idx` in the `ensures` clause with `proposer_index`, or add a spec-local binding `let ghost_proposer_idx = proposer_index;` before the `ensures`. This binds the postcondition to the actual input option so the prover can verify that `successful_proposals` is incremented exactly when the supplied proposer index is `Some` and in bounds.

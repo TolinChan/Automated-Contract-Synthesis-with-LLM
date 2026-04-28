@@ -1,0 +1,14 @@
+{
+  "run_id": "smoke_b6",
+  "baseline": "B6",
+  "total": 1,
+  "passed": 1,
+  "rows": [
+    {
+      "id": "chain_id_get",
+      "passed": true,
+      "rounds_to_success": 1,
+      "feedback_rounds_used": 0
+    }
+  ]
+}

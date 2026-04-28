@@ -1,0 +1,16 @@
+{
+  "id": "chain_id_initialize",
+  "module": "aptos_framework::chain_id",
+  "function": "initialize",
+  "source_file": "chain_id.move",
+  "spec_file": "chain_id.spec.move",
+  "complexity": "simple_plus",
+  "source_line_range": [
+    15,
+    18
+  ],
+  "body_chars": 121,
+  "body_lines": 4,
+  "spec_chars": 324,
+  "module_context_chars": 478
+}

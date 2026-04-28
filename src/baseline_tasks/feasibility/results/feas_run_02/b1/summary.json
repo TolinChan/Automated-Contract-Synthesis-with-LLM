@@ -1,0 +1,48 @@
+{
+  "run_id": "feas_run_02",
+  "baseline": "B1",
+  "total": 5,
+  "passed": 4,
+  "rows": [
+    {
+      "id": "chain_id_get",
+      "passed": true,
+      "exit_code": 0,
+      "prove_time_sec": 15.64,
+      "error_summary": "",
+      "extraction_failed": false
+    },
+    {
+      "id": "chain_id_initialize",
+      "passed": true,
+      "exit_code": 0,
+      "prove_time_sec": 16.05,
+      "error_summary": "",
+      "extraction_failed": false
+    },
+    {
+      "id": "coin_extract",
+      "passed": true,
+      "exit_code": 0,
+      "prove_time_sec": 27.61,
+      "error_summary": "",
+      "extraction_failed": false
+    },
+    {
+      "id": "block_initialize",
+      "passed": true,
+      "exit_code": 0,
+      "prove_time_sec": 42.21,
+      "error_summary": "",
+      "extraction_failed": false
+    },
+    {
+      "id": "stake_update_perf",
+      "passed": false,
+      "exit_code": 1,
+      "prove_time_sec": 72.16,
+      "error_summary": "}",
+      "extraction_failed": false
+    }
+  ]
+}

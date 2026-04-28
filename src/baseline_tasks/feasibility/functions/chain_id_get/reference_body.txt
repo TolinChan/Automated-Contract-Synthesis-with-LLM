@@ -1,0 +1,3 @@
+
+        borrow_global<ChainId>(@aptos_framework).id
+    

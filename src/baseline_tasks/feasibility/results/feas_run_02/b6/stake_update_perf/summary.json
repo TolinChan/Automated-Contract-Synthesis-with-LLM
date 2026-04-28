@@ -1,0 +1,25 @@
+{
+  "id": "stake_update_perf",
+  "passed": false,
+  "rounds_to_success": null,
+  "feedback_rounds_used": 1,
+  "feedback_rounds_budget": 1,
+  "history": [
+    {
+      "round": 0,
+      "passed": false,
+      "exit_code": 1,
+      "prove_time_sec": 64.55,
+      "error_summary": "}",
+      "extraction_failed": false
+    },
+    {
+      "round": 1,
+      "passed": false,
+      "exit_code": 1,
+      "prove_time_sec": 11.1,
+      "error_summary": "}",
+      "extraction_failed": false
+    }
+  ]
+}

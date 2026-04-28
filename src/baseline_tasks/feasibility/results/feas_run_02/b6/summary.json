@@ -1,0 +1,14 @@
+{
+  "run_id": "feas_run_02",
+  "baseline": "B6",
+  "total": 1,
+  "passed": 0,
+  "rows": [
+    {
+      "id": "stake_update_perf",
+      "passed": false,
+      "rounds_to_success": null,
+      "feedback_rounds_used": 1
+    }
+  ]
+}

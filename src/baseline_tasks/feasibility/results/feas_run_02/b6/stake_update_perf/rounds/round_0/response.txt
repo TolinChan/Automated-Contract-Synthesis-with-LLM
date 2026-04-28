@@ -1,0 +1,10 @@
+<<<BODY
+    let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+    if (option::is_some(&proposer_index)) {
+        let idx = option::borrow(&proposer_index);
+        if (*idx < vector::length(&validator_perf.validators)) {
+            let perf = vector::borrow_mut(&mut validator_perf.validators, *idx);
+            perf.successful_proposals = perf.successful_proposals + 1;
+        };
+    };
+BODY>>>

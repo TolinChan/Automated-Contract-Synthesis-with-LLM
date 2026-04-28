@@ -1,0 +1,18 @@
+// === imports ===
+use aptos_framework::system_addresses;
+use std::signer;
+
+// === friends ===
+friend aptos_framework::genesis;
+
+// === structs ===
+struct ChainId has key {
+        id: u8
+    }
+
+// === sibling function signatures (bodies omitted) ===
+    public fun get(): u8 acquires ChainId;
+    #[test_only]
+    public fun initialize_for_test(aptos_framework: &signer, id: u8);
+    #[test(aptos_framework = @0x1)]
+    fun test_get(aptos_framework: &signer) acquires ChainId;

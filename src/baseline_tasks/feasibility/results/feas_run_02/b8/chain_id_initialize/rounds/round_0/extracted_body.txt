@@ -1,0 +1,3 @@
+assert!(signer::address_of(aptos_framework) == @aptos_framework, 0);
+assert!(!exists<ChainId>(@aptos_framework), 0);
+move_to(aptos_framework, ChainId { id });

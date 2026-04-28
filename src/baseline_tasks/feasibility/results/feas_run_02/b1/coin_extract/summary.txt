@@ -1,0 +1,1 @@
+coin_extract: passed=True exit=0 time=27.61s summary=''

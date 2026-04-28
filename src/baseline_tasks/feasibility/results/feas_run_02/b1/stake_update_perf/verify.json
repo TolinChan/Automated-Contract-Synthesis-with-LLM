@@ -1,0 +1,19 @@
+{
+  "function_id": "stake_update_perf",
+  "passed": false,
+  "exit_code": 1,
+  "stdout": "{\n  \"Error\": \"Move Prover failed: exiting with condition generation errors\"\n}\n",
+  "stderr": "\u001b[0m\u001b[1m\u001b[38;5;11mwarning\u001b[0m\u001b[1m: Unused value of parameter `failed_proposer_indices`. Consider removing the parameter, or prefixing with an underscore (e.g., `_failed_proposer_indices`), or binding to `_`\u001b[0m\n     \u001b[0m\u001b[36m\u250c\u2500\u001b[0m E:\\src\\move-poc\\synth\\framework_workspace\\aptos-framework\\sources\\stake.move:1278:38\n     \u001b[0m\u001b[36m\u2502\u001b[0m\n\u001b[0m\u001b[36m1278\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m         proposer_index: Option<u64>, \u001b[0m\u001b[33mfailed_proposer_indices\u001b[0m: vector<u64>\n     \u001b[0m\u001b[36m\u2502\u001b[0m                                      \u001b[0m\u001b[33m^^^^^^^^^^^^^^^^^^^^^^^\u001b[0m\n\n[INFO] preparing module 0x1::stake\n[INFO] generating verification conditions\n[INFO] 12 verification conditions (for shard #1 of 5)\n[INFO] running solver\n[INFO] generating verification conditions\n[INFO] 11 verification conditions (for shard #2 of 5)\n\u001b[0m\u001b[1m\u001b[38;5;9merror\u001b[0m\u001b[1m: verification out of resources/timeout (global timeout set to 40s)\u001b[0m\n     \u001b[0m\u001b[36m\u250c\u2500\u001b[0m E:\\src\\move-poc\\synth\\framework_workspace\\aptos-framework\\sources\\stake.move:1277:5\n     \u001b[0m\u001b[36m\u2502\u001b[0m  \n\u001b[0m\u001b[36m1277\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u256d\u001b[0m     \u001b[0m\u001b[31mpublic(friend) fun update_performance_statistics(\u001b[0m\n\u001b[0m\u001b[36m1278\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[31m        proposer_index: Option<u64>, failed_proposer_indices: vector<u64>\u001b[0m\n\u001b[0m\u001b[36m1279\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[31m    ) acquires ValidatorPerformance {let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);\u001b[0m\n\u001b[0m\u001b[36m1280\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[31mlet validators = &mut validator_perf.validators;\u001b[0m\n     \u001b[0m\u001b[36m\u00b7\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m\n\u001b[0m\u001b[36m1286\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[31m    };\u001b[0m\n\u001b[0m\u001b[36m1287\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[31m};}\u001b[0m\n     \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2570\u001b[0m\u001b[0m\u001b[31m\u2500\u2500\u2500^\u001b[0m\n\n",
+  "command": [
+    "C:\\Users\\96247\\AppData\\Local\\Microsoft\\WinGet\\Packages\\AptosCore.aptos_Microsoft.Winget.Source_8wekyb3d8bbwe\\aptos.exe",
+    "move",
+    "prove",
+    "--package-dir",
+    "E:\\src\\move-poc\\synth\\framework_workspace\\aptos-framework",
+    "--filter",
+    "stake"
+  ],
+  "prove_time_sec": 72.16,
+  "splice_succeeded": true,
+  "error_summary": "}"
+}

@@ -1,0 +1,4 @@
+if (std::signer::address_of(aptos_framework) != @aptos_framework) {
+        abort 0
+    };
+    move_to(aptos_framework, ChainId { id });

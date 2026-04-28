@@ -1,0 +1,40 @@
+functions:
+  - id: chain_id_get
+    module: aptos_framework::chain_id
+    function: get
+    source_file: chain_id.move
+    spec_file: chain_id.spec.move
+    complexity: simple
+    notes: "1-line body; 1 aborts_if. Floor case."
+
+  - id: chain_id_initialize
+    module: aptos_framework::chain_id
+    function: initialize
+    source_file: chain_id.move
+    spec_file: chain_id.spec.move
+    complexity: simple_plus
+    notes: "Resource creation: assert + move_to. 2 aborts_if + 2 ensures."
+
+  - id: coin_extract
+    module: aptos_framework::coin
+    function: extract
+    source_file: coin.move
+    spec_file: coin.spec.move
+    complexity: medium
+    notes: "Generic; reference manipulation; arithmetic. Has inline spec { update supply<...> } blocks."
+
+  - id: block_initialize
+    module: aptos_framework::block
+    function: initialize
+    source_file: block.move
+    spec_file: block.spec.move
+    complexity: medium_high
+    notes: "Multi-resource init; struct construction; spec uses schema includes."
+
+  - id: stake_update_perf
+    module: aptos_framework::stake
+    function: update_performance_statistics
+    source_file: stake.move
+    spec_file: stake.spec.move
+    complexity: complex
+    notes: "Option + while loop + ghost vars + loop invariant."

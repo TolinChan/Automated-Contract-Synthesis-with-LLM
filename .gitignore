@@ -1,6 +1,7 @@
 .env
 .env.*
 *_secret*
+kimiapi.txt
 **/model_response.txt
 **/model_patch.txt
 __pycache__/

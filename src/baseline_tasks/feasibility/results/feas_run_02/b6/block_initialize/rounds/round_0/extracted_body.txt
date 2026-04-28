@@ -1,0 +1,9 @@
+system_addresses::assert_aptos_framework(aptos_framework);
+assert!(epoch_interval_microsecs > 0, error::invalid_argument(EZERO_EPOCH_INTERVAL));
+move_to(aptos_framework, BlockResource {
+    height: 0,
+    epoch_interval: epoch_interval_microsecs,
+    new_block_events: account::new_event_handle(aptos_framework),
+    update_epoch_interval_events: account::new_event_handle(aptos_framework),
+});
+initialize_commit_history(aptos_framework, 1000);

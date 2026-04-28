@@ -1,0 +1,19 @@
+{
+  "function_id": "chain_id_initialize",
+  "passed": false,
+  "exit_code": 1,
+  "stdout": "{\n  \"Error\": \"Move Prover failed: exiting with 1 error in compilation\"\n}\n",
+  "stderr": "",
+  "command": [
+    "C:\\Users\\96247\\AppData\\Local\\Microsoft\\WinGet\\Packages\\AptosCore.aptos_Microsoft.Winget.Source_8wekyb3d8bbwe\\aptos.exe",
+    "move",
+    "prove",
+    "--package-dir",
+    "E:\\src\\move-poc\\synth\\framework_workspace\\aptos-framework",
+    "--filter",
+    "chain_id"
+  ],
+  "prove_time_sec": 1.9,
+  "splice_succeeded": true,
+  "error_summary": "\"Error\": \"Move Prover failed: exiting with 1 error in compilation\""
+}

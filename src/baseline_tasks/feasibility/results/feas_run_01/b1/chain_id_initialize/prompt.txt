@@ -1,0 +1,34 @@
+Task: Write the body of a Move function so that it satisfies the formal specification.
+
+The body must, when placed between the function's outer braces and verified with
+`aptos move prove`, satisfy EVERY clause of the spec block — `aborts_if`,
+`ensures`, `requires`, `modifies`, etc.
+
+Constraints:
+- Move (Aptos dialect) source code only — no English commentary inside the body.
+- Use only standard built-ins, the items implied by the signature, or items declared in the
+  same module. (You are NOT given module context in this baseline.)
+- Do NOT modify the spec block — your output is the function BODY, not the whole function.
+
+=== Function Signature (do not repeat in your output) ===
+public(friend) fun initialize(aptos_framework: &signer, id: u8) {
+
+=== Formal Specification ===
+spec initialize {
+        use std::signer;
+        let addr = signer::address_of(aptos_framework);
+        aborts_if addr != @aptos_framework;
+        aborts_if exists<ChainId>(@aptos_framework);
+        /// [high-level-req-1]
+        ensures exists<ChainId>(addr);
+        ensures global<ChainId>(addr).id == id;
+    }
+
+=== Output format ===
+Return ONLY the function body, with the wrapper markers shown below. The body is the
+code that would go between the outer `{` and `}` of the function. Do not include the
+braces themselves, do not repeat the signature, do not add prose.
+
+<<<BODY
+... your Move code here ...
+BODY>>>

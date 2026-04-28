@@ -1,0 +1,4 @@
+assert!(coin.value >= amount, error::invalid_argument(EINSUFFICIENT_BALANCE));
+let result = Coin { value: amount };
+coin.value = coin.value - amount;
+result

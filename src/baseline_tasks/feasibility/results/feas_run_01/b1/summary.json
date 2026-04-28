@@ -1,0 +1,16 @@
+{
+  "run_id": "feas_run_01",
+  "baseline": "B1",
+  "total": 1,
+  "passed": 1,
+  "rows": [
+    {
+      "id": "block_initialize",
+      "passed": true,
+      "exit_code": 0,
+      "prove_time_sec": 31.52,
+      "error_summary": "",
+      "extraction_failed": false
+    }
+  ]
+}

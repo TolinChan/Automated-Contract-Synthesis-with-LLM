@@ -1,0 +1,10 @@
+
+    spec initialize {
+        use std::signer;
+        let addr = signer::address_of(aptos_framework);
+        aborts_if addr != @aptos_framework;
+        aborts_if exists<ChainId>(@aptos_framework);
+        /// [high-level-req-1]
+        ensures exists<ChainId>(addr);
+        ensures global<ChainId>(addr).id == id;
+    }

@@ -1,0 +1,5 @@
+<<<BODY
+system_addresses::assert_aptos_framework(aptos_framework);
+assert!(!exists<ChainId>(@aptos_framework), 0);
+move_to(aptos_framework, ChainId { id });
+BODY>>>

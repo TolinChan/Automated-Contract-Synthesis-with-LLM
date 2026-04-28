@@ -1,0 +1,4 @@
+<<<BODY
+assert!(std::signer::address_of(aptos_framework) == @aptos_framework, 0);
+move_to(aptos_framework, ChainId { id });
+BODY>>>

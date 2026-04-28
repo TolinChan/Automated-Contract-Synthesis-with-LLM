@@ -1,0 +1,28 @@
+
+        system_addresses::assert_aptos_framework(aptos_framework);
+        assert!(
+            epoch_interval_microsecs > 0, error::invalid_argument(EZERO_EPOCH_INTERVAL)
+        );
+
+        move_to<CommitHistory>(
+            aptos_framework,
+            CommitHistory {
+                max_capacity: 2000,
+                next_idx: 0,
+                table: table_with_length::new()
+            }
+        );
+
+        move_to<BlockResource>(
+            aptos_framework,
+            BlockResource {
+                height: 0,
+                epoch_interval: epoch_interval_microsecs,
+                new_block_events: account::new_event_handle<NewBlockEvent>(
+                    aptos_framework
+                ),
+                update_epoch_interval_events: account::new_event_handle<
+                    UpdateEpochIntervalEvent>(aptos_framework)
+            }
+        );
+    

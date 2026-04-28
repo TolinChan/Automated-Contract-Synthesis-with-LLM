@@ -1,0 +1,19 @@
+{
+  "function_id": "block_initialize",
+  "passed": true,
+  "exit_code": 0,
+  "stdout": "{\n  \"Result\": \"Success\"\n}\n",
+  "stderr": "[INFO] preparing module 0x1::block\n[INFO] generating verification conditions\n[INFO] 0 verification conditions (for shard #1 of 5)\n[INFO] running solver\n[INFO] generating verification conditions\n[INFO] 0 verification conditions (for shard #2 of 5)\n[INFO] running solver\n[INFO] generating verification conditions\n[INFO] 0 verification conditions (for shard #3 of 5)\n[INFO] running solver\n[INFO] generating verification conditions\n[INFO] 0 verification conditions (for shard #4 of 5)\n[INFO] running solver\n[INFO] generating verification conditions\n[INFO] 0 verification conditions (for shard #5 of 5)\n[INFO] running solver\n[INFO] 5.21s build, 1.43s trafo, 0.18/0.18/0.18/0.18/0.18s gen, 3.97/4.14/3.87/4.03/3.88s verify, total 27.42s\n",
+  "command": [
+    "C:\\Users\\96247\\AppData\\Local\\Microsoft\\WinGet\\Packages\\AptosCore.aptos_Microsoft.Winget.Source_8wekyb3d8bbwe\\aptos.exe",
+    "move",
+    "prove",
+    "--package-dir",
+    "E:\\src\\move-poc\\synth\\framework_workspace\\aptos-framework",
+    "--filter",
+    "block"
+  ],
+  "prove_time_sec": 27.68,
+  "splice_succeeded": true,
+  "error_summary": ""
+}

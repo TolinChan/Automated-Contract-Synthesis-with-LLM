@@ -1,0 +1,1 @@
+stake_update_perf: passed=False rounds_to_success=None budget=1

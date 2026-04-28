@@ -1,0 +1,5 @@
+
+    spec get {
+        /// [high-level-req-2]
+        aborts_if !exists<ChainId>(@aptos_framework);
+    }

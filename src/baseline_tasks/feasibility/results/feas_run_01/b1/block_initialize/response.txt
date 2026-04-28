@@ -1,0 +1,12 @@
+<<<BODY
+system_addresses::assert_aptos_framework(aptos_framework);
+move_to<BlockResource>(
+    aptos_framework,
+    BlockResource {
+        epoch_interval: epoch_interval_microsecs,
+        height: 0,
+        new_block_events: account::new_event_handle<NewBlockEvent>(aptos_framework),
+        update_epoch_interval_events: account::new_event_handle<UpdateEpochIntervalEvent>(aptos_framework),
+    }
+);
+BODY>>>

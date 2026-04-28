@@ -1,0 +1,16 @@
+{
+  "id": "block_initialize",
+  "module": "aptos_framework::block",
+  "function": "initialize",
+  "source_file": "block.move",
+  "spec_file": "block.spec.move",
+  "complexity": "medium_high",
+  "source_line_range": [
+    92,
+    121
+  ],
+  "body_chars": 883,
+  "body_lines": 28,
+  "spec_chars": 394,
+  "module_context_chars": 5135
+}

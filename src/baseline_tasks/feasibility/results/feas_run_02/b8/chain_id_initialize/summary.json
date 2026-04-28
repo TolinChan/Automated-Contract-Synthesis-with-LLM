@@ -1,0 +1,25 @@
+{
+  "id": "chain_id_initialize",
+  "passed": true,
+  "rounds_to_success": 2,
+  "feedback_rounds_used": 1,
+  "feedback_rounds_budget": 3,
+  "history": [
+    {
+      "round": 0,
+      "passed": false,
+      "exit_code": 1,
+      "prove_time_sec": 1.9,
+      "error_summary": "\"Error\": \"Move Prover failed: exiting with 1 error in compilation\"",
+      "extraction_failed": false
+    },
+    {
+      "round": 1,
+      "passed": true,
+      "exit_code": 0,
+      "prove_time_sec": 11.4,
+      "error_summary": "",
+      "extraction_failed": false
+    }
+  ]
+}

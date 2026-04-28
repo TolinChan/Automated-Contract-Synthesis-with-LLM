@@ -1,0 +1,1 @@
+block_initialize: passed=True exit=0 time=42.21s summary=''

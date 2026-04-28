@@ -1,0 +1,50 @@
+Task: Write the body of a Move function so that it satisfies the formal specification.
+
+The body must, when placed between the function's outer braces and verified with
+`aptos move prove`, satisfy EVERY clause of the spec block — `aborts_if`,
+`ensures`, `requires`, `modifies`, etc.
+
+Constraints:
+- Move (Aptos dialect) source code only — no English commentary inside the body.
+- You may use anything declared in the Module Context section below (imports, constants,
+  structs, sibling functions). Cross-module APIs not listed there are not provided;
+  prefer in-module APIs when the spec allows.
+- Do NOT modify the spec block — your output is the function BODY only.
+
+=== Function Signature (do not repeat in your output) ===
+public fun get(): u8 acquires ChainId {
+
+=== Formal Specification ===
+spec get {
+        /// [high-level-req-2]
+        aborts_if !exists<ChainId>(@aptos_framework);
+    }
+
+=== Module Context (imports, constants, structs, sibling function signatures) ===
+// === imports ===
+use aptos_framework::system_addresses;
+use std::signer;
+
+// === friends ===
+friend aptos_framework::genesis;
+
+// === structs ===
+struct ChainId has key {
+        id: u8
+    }
+
+// === sibling function signatures (bodies omitted) ===
+    public(friend) fun initialize(aptos_framework: &signer, id: u8);
+    #[test_only]
+    public fun initialize_for_test(aptos_framework: &signer, id: u8);
+    #[test(aptos_framework = @0x1)]
+    fun test_get(aptos_framework: &signer) acquires ChainId;
+
+=== Output format ===
+Return ONLY the function body, with the wrapper markers shown below. The body is the
+code that would go between the outer `{` and `}` of the function. Do not include the
+braces themselves, do not repeat the signature, do not add prose.
+
+<<<BODY
+... your Move code here ...
+BODY>>>

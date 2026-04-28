@@ -1,0 +1,3 @@
+    public(friend) fun update_performance_statistics(
+        proposer_index: Option<u64>, failed_proposer_indices: vector<u64>
+    ) acquires ValidatorPerformance {

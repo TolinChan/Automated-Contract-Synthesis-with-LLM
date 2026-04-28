@@ -1,0 +1,52 @@
+
+        // Validator set cannot change until the end of the epoch, so the validator index in arguments should
+        // match with those of the validators in ValidatorPerformance resource.
+        let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+        let validator_len = validator_perf.validators.length();
+
+        spec {
+            update ghost_valid_perf = validator_perf;
+            update ghost_proposer_idx = proposer_index;
+        };
+        // proposer_index is an option because it can be missing (for NilBlocks)
+        if (proposer_index.is_some()) {
+            let cur_proposer_index = proposer_index.extract();
+            // Here, and in all other vector::borrow, skip any validator indices that are out of bounds,
+            // this ensures that this function doesn't abort if there are out of bounds errors.
+            if (cur_proposer_index < validator_len) {
+                let validator = validator_perf.validators.borrow_mut(cur_proposer_index);
+                spec {
+                    assume validator.successful_proposals + 1 <= MAX_U64;
+                };
+                validator.successful_proposals += 1;
+            };
+        };
+
+        let f = 0;
+        let f_len = failed_proposer_indices.length();
+        while ({
+            spec {
+                invariant len(validator_perf.validators) == validator_len;
+                invariant (
+                    option::is_some(ghost_proposer_idx)
+                        && option::borrow(ghost_proposer_idx) < validator_len
+                ) ==>
+                    (
+                        validator_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals ==
+                        ghost_valid_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals
+                        + 1
+                    );
+            };
+            f < f_len
+        }) {
+            let validator_index = failed_proposer_indices[f];
+            if (validator_index < validator_len) {
+                let validator = validator_perf.validators.borrow_mut(validator_index);
+                spec {
+                    assume validator.failed_proposals + 1 <= MAX_U64;
+                };
+                validator.failed_proposals += 1;
+            };
+            f += 1;
+        };
+    

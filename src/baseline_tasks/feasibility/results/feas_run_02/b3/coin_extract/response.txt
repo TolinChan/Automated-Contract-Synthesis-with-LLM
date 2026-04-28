@@ -1,0 +1,5 @@
+<<<BODY
+assert!(coin.value >= amount, error::invalid_argument(EINSUFFICIENT_BALANCE));
+coin.value = coin.value - amount;
+Coin { value: amount }
+BODY>>>

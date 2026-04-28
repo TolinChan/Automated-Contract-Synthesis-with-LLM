@@ -1,0 +1,3 @@
+    public(friend) fun initialize(
+        aptos_framework: &signer, epoch_interval_microsecs: u64
+    ) {

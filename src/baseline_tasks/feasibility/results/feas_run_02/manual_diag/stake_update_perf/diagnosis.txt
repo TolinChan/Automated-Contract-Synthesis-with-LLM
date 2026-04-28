@@ -1,0 +1,48 @@
+CATEGORY: ghost_var_missing
+
+ROOT_CAUSE: The body does not initialize the spec ghost variables `ghost_valid_perf` and `ghost_proposer_idx` that the spec's `ensures` clause references, and (when the body adds the loop over `failed_proposer_indices`) it places loop invariants in the wrong location and omits the overflow `assume`s the spec needs to discharge `+1` arithmetic. The spec is correct; only the body must change.
+
+FIX_INSTRUCTION: Produce a body that performs all THREE of the Move Prover idioms below — the body will not verify if any of them is missing.
+
+(1) Right after binding `validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);` and `validator_len = vector::length(&validator_perf.validators);`, insert a spec-update block that copies the input snapshots into the module-level ghost variables that the spec already declares:
+
+    spec {
+        update ghost_valid_perf = validator_perf;
+        update ghost_proposer_idx = proposer_index;
+    };
+
+These are NOT regular `let` bindings. Do not write `let ghost_proposer_idx = proposer_index;`. Use `spec { update ... };` exactly as shown.
+
+(2) The while loop over `failed_proposer_indices` must declare its invariants INSIDE the while-header expression, not in the loop body. Use this shape exactly:
+
+    let f = 0;
+    let f_len = vector::length(&failed_proposer_indices);
+    while ({
+        spec {
+            invariant len(validator_perf.validators) == validator_len;
+            invariant (
+                option::is_some(ghost_proposer_idx)
+                    && option::borrow(ghost_proposer_idx) < validator_len
+            ) ==>
+                (
+                    validator_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals ==
+                    ghost_valid_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals
+                    + 1
+                );
+        };
+        f < f_len
+    }) {
+        let validator_index = *vector::borrow(&failed_proposer_indices, f);
+        if (validator_index < validator_len) {
+            let validator = vector::borrow_mut(&mut validator_perf.validators, validator_index);
+            spec { assume validator.failed_proposals + 1 <= MAX_U64; };
+            validator.failed_proposals = validator.failed_proposals + 1;
+        };
+        f = f + 1;
+    };
+
+The prover rejects invariants placed inside the loop body with `Loop invariants must be declared at the beginning of the loop header in a consecutive sequence`.
+
+(3) Every `+= 1` that mutates a `u64` must be preceded by a `spec { assume X + 1 <= MAX_U64; };` block. Without these, the prover emits an unbounded overflow VC and times out at the 40s global timeout. Apply this both to `successful_proposals` (inside the `if (proposer_index.is_some())` branch) and to `failed_proposals` (inside the failed-index loop, as already shown above).
+
+Put it all together: ghost-var spec updates BEFORE the `if (option::is_some(&proposer_index))` block; overflow `assume` IMMEDIATELY before each increment; loop invariants in the while-header spec block. Use `option::is_some` / `option::borrow` (or the dot-call `proposer_index.is_some()` / `proposer_index.extract()`). Skip out-of-bounds indices silently — do not abort.
