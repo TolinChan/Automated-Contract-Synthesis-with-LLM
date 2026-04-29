@@ -208,7 +208,7 @@ def extract_sibling_signatures(module_body: str, target_fn: str) -> list[str]:
     return out
 
 
-def build_module_context(source_text: str, target_fn: str) -> str:
+def build_module_context(source_text: str, target_fn: str, spec_text: str | None = None) -> str:
     module_body, _, _ = extract_module_block(source_text)
     parts: list[str] = []
 
@@ -237,7 +237,30 @@ def build_module_context(source_text: str, target_fn: str) -> str:
         parts.append("\n// === sibling function signatures (bodies omitted) ===")
         parts.extend(siblings)
 
+    if spec_text:
+        spec_decls = extract_spec_module_level(spec_text)
+        if spec_decls:
+            parts.append("\n// === module-level spec declarations (from .spec.move) ===")
+            parts.extend(spec_decls)
+
     return "\n".join(parts) + "\n"
+
+
+_GLOBAL_GHOST_RE = re.compile(
+    r"^\s*global\s+\w+\s*:\s*[^;]+;",
+    re.MULTILINE,
+)
+
+
+def extract_spec_module_level(spec_text: str) -> list[str]:
+    """Pull module-level spec declarations out of a .spec.move file. We focus
+    on `global ghost_xxx: T;` ghost-var declarations because the codegen LLM
+    needs to know which module-level ghost vars exist in order to update them
+    via `spec { update ghost_xxx = ...; };` from within the function body.
+
+    We do NOT pull `schema` blocks (they would balloon the context); siblings'
+    spec blocks; or pragmas. Only the `global` lines, kept in source order."""
+    return [m.group(0).strip() for m in _GLOBAL_GHOST_RE.finditer(spec_text)]
 
 
 def main() -> int:
@@ -257,7 +280,7 @@ def main() -> int:
 
         spec_block = extract_spec_block(spec, fn.function)
         signature, body, (start_line, end_line) = extract_function(src, fn.function)
-        context = build_module_context(src, fn.function)
+        context = build_module_context(src, fn.function, spec_text=spec)
 
         out_dir = FEASIBILITY_DIR / "functions" / fn.id
         out_dir.mkdir(parents=True, exist_ok=True)

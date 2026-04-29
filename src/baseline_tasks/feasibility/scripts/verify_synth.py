@@ -200,6 +200,42 @@ def verify(function_id: str, body: str, *, timeout_sec: int = 600) -> VerifyResu
         exit_code = -2
 
     passed = exit_code == 0
+    if not passed:
+        # The aptos CLI swallows Move-compile errors when invoked via
+        # `aptos move prove` and only emits a JSON summary like
+        # `{"Error":"Move Prover failed: exiting with N errors in compilation"}`.
+        # That summary is useless to the diagnose-LLM. If we detect this case,
+        # re-run `aptos move compile` to capture the real error messages and
+        # append them to stderr so the feedback loop has something to work on.
+        combined = (stdout or "") + "\n" + (stderr or "")
+        if ("error in compilation" in combined or "errors in compilation" in combined) and not _has_compile_error_text(stderr):
+            compile_cmd = [
+                _aptos_cmd(),
+                "move",
+                "compile",
+                "--package-dir",
+                str(WORKSPACE_PKG),
+            ]
+            try:
+                cproc = subprocess.run(
+                    compile_cmd,
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    timeout=180,
+                )
+                compile_stderr = cproc.stderr or ""
+                compile_stdout = cproc.stdout or ""
+                appendix = (
+                    "\n\n--- compile errors captured by retry ---\n"
+                    + (compile_stderr or compile_stdout)
+                )
+                stderr = (stderr or "") + appendix
+            except Exception as exc:  # pragma: no cover
+                stderr = (stderr or "") + f"\n\n[compile retry failed: {exc}]"
+
     return VerifyResult(
         function_id=function_id,
         passed=passed,
@@ -211,6 +247,23 @@ def verify(function_id: str, body: str, *, timeout_sec: int = 600) -> VerifyResu
         splice_succeeded=True,
         error_summary="" if passed else _extract_summary(stdout, stderr),
     )
+
+
+def _has_compile_error_text(stderr: str) -> bool:
+    """Heuristic: stderr already contains move-compiler error messages."""
+    if not stderr:
+        return False
+    indicators = (
+        "error[E",
+        "invalid old",
+        "expected",
+        "unresolved",
+        "unbound",
+        "type mismatch",
+        "context checking errors",
+    )
+    s = _strip_ansi(stderr)
+    return any(ind in s for ind in indicators)
 
 
 def main() -> int:

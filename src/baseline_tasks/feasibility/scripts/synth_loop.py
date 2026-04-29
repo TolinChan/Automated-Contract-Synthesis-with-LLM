@@ -143,7 +143,7 @@ def run_loop_one(
                     failed_body=previous_body,
                     prover_stdout=previous_verify.get("stdout", ""),
                     prover_stderr=previous_verify.get("stderr", ""),
-                    max_tokens=16000,
+                    max_tokens=32000,
                 )
             except Exception as exc:
                 diagnosis_text = f"(diagnosis call failed: {type(exc).__name__}: {exc})"
@@ -209,7 +209,7 @@ def main() -> int:
         help="Number of feedback rounds AFTER round 0 (B6=1, B7=3).",
     )
     p.add_argument("--id", help="Function id (omit to run all in registry).")
-    p.add_argument("--max-tokens", type=int, default=16000)
+    p.add_argument("--max-tokens", type=int, default=32000)
     p.add_argument("--run-id", help="Override run directory name (default: timestamp).")
     p.add_argument(
         "--baseline-name",

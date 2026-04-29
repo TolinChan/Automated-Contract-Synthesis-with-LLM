@@ -756,3 +756,9 @@ struct AllowedValidators has key {
     public entry fun test_validator_set_liveness_fallback(
         aptos_framework: &signer, validator: &signer
     );
+
+// === module-level spec declarations (from .spec.move) ===
+global ghost_valid_perf: ValidatorPerformance;
+global ghost_proposer_idx: Option<u64>;
+global ghost_active_num: u64;
+global ghost_pending_inactive_num: u64;
