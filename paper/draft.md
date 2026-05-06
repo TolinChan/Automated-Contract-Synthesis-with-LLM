@@ -1,4 +1,4 @@
-# MoveBiSynth: Spec-Driven Smart-Contract Synthesis with Verifier-in-the-Loop Feedback
+# MoVES: Spec-Driven Smart-Contract Synthesis with Verifier-in-the-Loop Feedback
 
 > Full paper draft — ASE submission format  
 > Target: Automated Software Engineering (ASE), full research track
@@ -9,9 +9,9 @@
 
 Generating implementations that satisfy formal specifications is a long-standing goal in software engineering. Large language models (LLMs) can produce code from natural-language or formal specs, yet the generated code frequently fails to pass formal verification—particularly for languages with first-class verification support such as Aptos Move. We observe that the bottleneck is often not the LLM's *code-generation* capability but its inability to interpret low-level verifier output and translate it into actionable, domain-specific repairs.
 
-We present **MoveBiSynth**, a verifier-in-the-loop synthesis pipeline for Move smart contracts. Given a function signature and a fixed Move-Spec formal specification, MoveBiSynth repeatedly synthesises a function body and validates it with the Move Prover (Boogie/Z3). When verification fails, a dedicated **diagnoser** role classifies the failure into a taxonomy of Move-Prover-specific idioms and prescribes structured fix instructions, which are fed back to a separate **code-generation** role for the next round. This two-role separation prevents the generator from defending its own mistakes and keeps the feedback bounded and actionable.
+We present **MoVES**, a verifier-in-the-loop synthesis pipeline for Move smart contracts. Given a function signature and a fixed Move-Spec formal specification, MoVES repeatedly synthesises a function body and validates it with the Move Prover (Boogie/Z3). When verification fails, a dedicated **diagnoser** role classifies the failure into a taxonomy of Move-Prover-specific idioms and prescribes structured fix instructions, which are fed back to a separate **code-generation** role for the next round. This two-role separation prevents the generator from defending its own mistakes and keeps the feedback bounded and actionable.
 
-A minimal feasibility test on five Aptos-framework functions shows that zero-shot LLM synthesis passes 4/5 cases; the single failure—a complex function requiring ghost-variable updates, while-header invariants, and overflow assumes—cannot be repaired by generic error feedback, yet is fixed in one round when the diagnoser names the three required idioms explicitly. These results separate *codegen capability* (sufficient) from *diagnosis quality* (the bottleneck), and motivate the structured, domain-specific feedback loop at the heart of MoveBiSynth.
+A minimal feasibility test on five Aptos-framework functions shows that zero-shot LLM synthesis passes 4/5 cases; the single failure—a complex function requiring ghost-variable updates, while-header invariants, and overflow assumes—cannot be repaired by generic error feedback, yet is fixed in one round when the diagnoser names the three required idioms explicitly. These results separate *codegen capability* (sufficient) from *diagnosis quality* (the bottleneck), and motivate the structured, domain-specific feedback loop at the heart of MoVES.
 
 **Keywords:** smart-contract synthesis, formal verification, Move Prover, LLM agent, feedback loop
 
@@ -28,7 +28,7 @@ A natural response is to close the loop: run the verifier, feed its error output
 1. **Raw verifier output is too low-level.** The Move Prover emits Boogie/Z3-level messages (verification-condition failures, SMT timeouts, counter-example traces). Feeding these directly into an LLM as "feedback" overwhelms the context window and does not surface the high-level code transformation required.
 2. **Asking one LLM to both generate and self-critique conflates two distinct tasks.** A generator asked to repair its own output tends to make local, syntactic patches rather than recognise missing domain idioms; the failure mode and the fix are often orthogonal skills.
 
-We address both problems with **two-role separation** and **structured domain-specific diagnosis**. MoveBiSynth splits the work between a *codegen* role (produce a body) and a *diagnoser* role (analyse verifier output and prescribe fixes in the vocabulary of Move-Prover idioms). The diagnoser's output is not raw prover stderr; it is a typed record `{CATEGORY, ROOT_CAUSE, FIX_INSTRUCTION}` phrased in domain terms the codegen role can act on.
+We address both problems with **two-role separation** and **structured domain-specific diagnosis**. MoVES splits the work between a *codegen* role (produce a body) and a *diagnoser* role (analyse verifier output and prescribe fixes in the vocabulary of Move-Prover idioms). The diagnoser's output is not raw prover stderr; it is a typed record `{CATEGORY, ROOT_CAUSE, FIX_INSTRUCTION}` phrased in domain terms the codegen role can act on.
 
 ### 1.1 Motivating Example
 
@@ -56,7 +56,7 @@ We make the following contributions:
 
 ### 1.3 Paper Organisation
 
-Section 2 introduces Move, the Move Prover, and the spec-driven synthesis task. Section 3 surveys related work. Section 4 presents the MoveBiSynth design. Section 5 reports the minimal feasibility test. Section 6 discusses threats to validity and open questions. Section 7 concludes.
+Section 2 introduces Move, the Move Prover, and the spec-driven synthesis task. Section 3 surveys related work. Section 4 presents the MoVES design. Section 5 reports the minimal feasibility test. Section 6 discusses threats to validity and open questions. Section 7 concludes.
 
 ---
 
@@ -102,7 +102,7 @@ We classify related work along two axes: **spec-driven vs. error-driven** input,
 
 ### 3.3 Positioning
 
-| Dimension | MSG | PropertyGPT | RePair | **MoveBiSynth** |
+| Dimension | MSG | PropertyGPT | RePair | **MoVES** |
 |---|---|---|---|---|
 | Task | Code → Spec | Property synthesis | Bug repair | **Spec → Code** |
 | Input | Code + static analysis | Retrieved properties | Buggy code + errors | **Formal spec** |
@@ -110,7 +110,7 @@ We classify related work along two axes: **spec-driven vs. error-driven** input,
 | Feedback | Generic prover error | Property refinement | Rollback to best step | **Structured idiom-level diagnosis** |
 | Roles | Multi-agent (spec clauses) | Single LLM + RAG | Actor + critic | **Codegen + Diagnose (separate)** |
 
-MoveBiSynth is distinguished by (1) the spec-to-code direction, (2) the two-role separation with a domain-specific diagnoser, and (3) the hard verifier oracle without LLM-as-judge.
+MoVES is distinguished by (1) the spec-to-code direction, (2) the two-role separation with a domain-specific diagnoser, and (3) the hard verifier oracle without LLM-as-judge.
 
 ---
 
@@ -118,7 +118,7 @@ MoveBiSynth is distinguished by (1) the spec-to-code direction, (2) the two-role
 
 ### 4.1 Architecture Overview
 
-MoveBiSynth is a feedback loop with two LLM roles and one deterministic oracle:
+MoVES is a feedback loop with two LLM roles and one deterministic oracle:
 
 ```
 Frozen inputs
@@ -287,7 +287,7 @@ This validates the two-role architecture: the codegen role works when the diagno
 
 ## 7. Conclusion
 
-We presented MoveBiSynth, a verifier-in-the-loop synthesis pipeline for Move smart contracts. Its core design—two-role separation between codegen and diagnosis, with a domain-specific idiom taxonomy bridging raw prover output to actionable fixes—is motivated by an empirical observation: LLMs can generate verifying code for complex Move functions, but only when the feedback names the required domain idioms explicitly. Generic feedback loops fail on the same cases.
+We presented MoVES, a verifier-in-the-loop synthesis pipeline for Move smart contracts. Its core design—two-role separation between codegen and diagnosis, with a domain-specific idiom taxonomy bridging raw prover output to actionable fixes—is motivated by an empirical observation: LLMs can generate verifying code for complex Move functions, but only when the feedback names the required domain idioms explicitly. Generic feedback loops fail on the same cases.
 
 A minimal feasibility test on five Aptos-framework functions supports this claim: 4/5 pass zero-shot; the one failure is repaired in one round by structured manual diagnosis but not by generic auto-feedback. This separates codegen capability from diagnosis quality and establishes the diagnoser as the critical component for scaling to larger benchmarks.
 
