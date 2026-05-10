@@ -1,0 +1,32 @@
+CATEGORY: compile_error
+
+ROOT_CAUSE: The while-header invariant uses `old(global<ValidatorPerformance>(@aptos_framework))`, but `old(..)` inside an inline spec block is restricted to function parameters only. Additionally, the spec's postcondition is expressed in terms of the module-level ghost variable `ghost_proposer_idx`, which the body never initialises — so even after fixing the `old(..)` error the ensures clause cannot be discharged (ghost_var_missing idiom).
+
+FIX_INSTRUCTION:
+1. Initialise the ghost variable at function entry so the postcondition can refer to it. Add right after `let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);`:
+   ```
+   spec {
+       update ghost_proposer_idx = proposer_index;
+   };
+   ```
+2. Remove the illegal `old(...)` from the while-header invariant. Snapshot the prior `successful_proposals` value into a local *before* the loop and reference that local in the invariant instead. For example, before the `while`:
+   ```
+   let prev_successful = if (option::is_some(&proposer_index)
+                              && *option::borrow(&proposer_index) < validator_len) {
+       vector::borrow(&validator_perf.validators, *option::borrow(&proposer_index)).successful_proposals
+   } else { 0 };
+   ```
+   Then rewrite the loop header as:
+   ```
+   while ({
+       spec {
+           invariant len(validator_perf.validators) == validator_len;
+           invariant (option::is_some(ghost_proposer_idx)
+                      && option::borrow(ghost_proposer_idx) < validator_len) ==>
+               validator_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals
+               == prev_successful;
+       };
+       f < f_len
+   }) { ... }
+   ```
+   The key rule: never use `old(..)` inside a while-header spec block — capture the needed pre-state into a local variable before the loop and refer to that local in the invariant.

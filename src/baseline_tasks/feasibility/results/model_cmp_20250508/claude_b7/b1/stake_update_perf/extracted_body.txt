@@ -1,0 +1,39 @@
+let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+        let validator_len = vector::length(&validator_perf.validators);
+
+        spec {
+            update ghost_proposer_idx = proposer_index;
+        };
+
+        // proposer_index is an option<u64>. it can be none.
+        if (option::is_some(&proposer_index)) {
+            let cur_proposer_index = option::extract(&mut proposer_index);
+            // Here, if the proposer is a validator that exits during the epoch, this match will fail.
+            // We don't want to error out here, since this is in the prologue.
+            if (cur_proposer_index < validator_len) {
+                let validator = vector::borrow_mut(&mut validator_perf.validators, cur_proposer_index);
+                spec {
+                    assume validator.successful_proposals + 1 <= MAX_U64;
+                };
+                validator.successful_proposals = validator.successful_proposals + 1;
+            };
+        };
+
+        let f = 0;
+        let f_len = vector::length(&failed_proposer_indices);
+        while ({
+            spec {
+                invariant len(validator_perf.validators) == validator_len;
+            };
+            f < f_len
+        }) {
+            let validator_index = *vector::borrow(&failed_proposer_indices, f);
+            if (validator_index < validator_len) {
+                let validator = vector::borrow_mut(&mut validator_perf.validators, validator_index);
+                spec {
+                    assume validator.failed_proposals + 1 <= MAX_U64;
+                };
+                validator.failed_proposals = validator.failed_proposals + 1;
+            };
+            f = f + 1;
+        };

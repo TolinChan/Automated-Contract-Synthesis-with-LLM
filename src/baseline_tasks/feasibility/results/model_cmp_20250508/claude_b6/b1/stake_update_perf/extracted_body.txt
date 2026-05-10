@@ -1,0 +1,43 @@
+let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+        let validator_len = vector::length(&validator_perf.validators);
+
+        spec {
+            update ghost_proposer_idx = proposer_index;
+        };
+
+        // Here, proposer_index is an option because it can be missing (for NilBlocks)
+        if (option::is_some(&proposer_index)) {
+            let cur_proposer_index = option::extract(&mut proposer_index);
+            // Here, we assume that this validator's index is within the bounds of the
+            // validator set since it represents the index in the active validator set
+            // (potentially after the validator set has been reconfigured).
+            if (cur_proposer_index < validator_len) {
+                let validator = vector::borrow_mut(&mut validator_perf.validators, cur_proposer_index);
+                spec {
+                    assume validator.successful_proposals + 1 <= MAX_U64;
+                };
+                validator.successful_proposals = validator.successful_proposals + 1;
+            };
+        };
+
+        let f = 0;
+        let f_len = vector::length(&failed_proposer_indices);
+        while ({
+            spec {
+                invariant len(validator_perf.validators) == validator_len;
+                invariant (option::is_some(ghost_proposer_idx) && option::borrow(ghost_proposer_idx) < validator_len) ==>
+                    (validator_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals ==
+                     old(validator_perf).validators[option::borrow(ghost_proposer_idx)].successful_proposals + 1);
+            };
+            (f < f_len)
+        }) {
+            let validator_index = *vector::borrow(&failed_proposer_indices, f);
+            if (validator_index < validator_len) {
+                let validator = vector::borrow_mut(&mut validator_perf.validators, validator_index);
+                spec {
+                    assume validator.failed_proposals + 1 <= MAX_U64;
+                };
+                validator.failed_proposals = validator.failed_proposals + 1;
+            };
+            f = f + 1;
+        };

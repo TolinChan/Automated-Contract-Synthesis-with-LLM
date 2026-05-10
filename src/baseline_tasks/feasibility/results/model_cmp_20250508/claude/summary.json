@@ -1,0 +1,26 @@
+{
+  "model": "anthropic/claude-opus-4.7",
+  "provider": "ofox",
+  "function_id": "stake_update_perf",
+  "max_tokens": 16000,
+  "results": [
+    {
+      "baseline": "B1",
+      "id": "stake_update_perf",
+      "passed": false,
+      "exit_code": 1,
+      "prove_time_sec": 62.03,
+      "error_summary": "error: verification out of resources/timeout (global timeout set to 40s)",
+      "extraction_failed": false
+    },
+    {
+      "baseline": "B3",
+      "id": "stake_update_perf",
+      "passed": false,
+      "exit_code": 1,
+      "prove_time_sec": 58.28,
+      "error_summary": "error: unexpected boogie output: `*** MODEL",
+      "extraction_failed": false
+    }
+  ]
+}

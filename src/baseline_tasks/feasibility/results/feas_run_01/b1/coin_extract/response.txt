@@ -1,4 +1,0 @@
-<<<BODY
-coin.value = coin.value - amount;
-Coin { value: amount }
-BODY>>>

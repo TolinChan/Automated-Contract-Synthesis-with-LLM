@@ -1,0 +1,19 @@
+{
+  "function_id": "stake_update_perf",
+  "passed": false,
+  "exit_code": 1,
+  "stdout": "{\n  \"Error\": \"Move Prover failed: exiting with 1 error in compilation\"\n}\n",
+  "stderr": "\n\n--- compile errors captured by retry ---\nCompiling, may take a little while to download git dependencies...\nINCLUDING DEPENDENCY AptosStdlib\nINCLUDING DEPENDENCY MoveStdlib\nBUILDING AptosFramework\n\u001b[0m\u001b[1m\u001b[38;5;9merror\u001b[0m\u001b[1m: invalid old(..) expression in inline spec block\u001b[0m\n     \u001b[0m\u001b[36m\u250c\u2500\u001b[0m E:\\src\\move-poc\\synth\\framework_workspace\\aptos-framework\\sources\\stake.move:1306:17\n     \u001b[0m\u001b[36m\u2502\u001b[0m    \n\u001b[0m\u001b[36m1306\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u256d\u001b[0m \u001b[0m\u001b[36m\u256d\u001b[0m                 \u001b[0m\u001b[31minvariant (option::is_some(ghost_proposer_idx) && option::borrow(ghost_proposer_idx) < validator_len) ==>\u001b[0m\n\u001b[0m\u001b[36m1307\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m                    (validator_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals ==\u001b[0m\n\u001b[0m\u001b[36m1308\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m                     old(validator_perf).validators[option::borrow(ghost_proposer_idx)].successful_proposals + 1);\u001b[0m\n     \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m                          \u001b[0m\u001b[36m--------------\u001b[0m \u001b[0m\u001b[36mthis expression is not a function parameter\u001b[0m\n     \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2570\u001b[0m\u001b[0m\u001b[31m\u2500\u001b[0m\u001b[0m\u001b[36m\u2502\u001b[0m\u001b[0m\u001b[31m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500^\u001b[0m\n     \u001b[0m\u001b[36m\u2502\u001b[0m   \u001b[0m\u001b[36m\u2570\u001b[0m\u001b[0m\u001b[36m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500' only a function parameter is allowed in old(..) expressions in inline spec block\u001b[0m\n\n",
+  "command": [
+    "C:\\Users\\96247\\AppData\\Local\\Microsoft\\WinGet\\Packages\\AptosCore.aptos_Microsoft.Winget.Source_8wekyb3d8bbwe\\aptos.exe",
+    "move",
+    "prove",
+    "--package-dir",
+    "E:\\src\\move-poc\\synth\\framework_workspace\\aptos-framework",
+    "--filter",
+    "stake"
+  ],
+  "prove_time_sec": 1.56,
+  "splice_succeeded": true,
+  "error_summary": "error: invalid old(..) expression in inline spec block"
+}

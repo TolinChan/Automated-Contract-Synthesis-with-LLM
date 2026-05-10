@@ -1,0 +1,96 @@
+{
+  "model": "anthropic/claude-opus-4.7",
+  "provider": "ofox",
+  "function_id": "stake_update_perf",
+  "max_tokens": 16000,
+  "feedback_rounds": 3,
+  "results": [
+    {
+      "baseline": "B1",
+      "id": "stake_update_perf",
+      "passed": false,
+      "exit_code": 1,
+      "prove_time_sec": 58.24,
+      "error_summary": "error: verification out of resources/timeout (global timeout set to 40s)",
+      "extraction_failed": false,
+      "body": "let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);\n        let validator_len = vector::length(&validator_perf.validators);\n\n        spec {\n            update ghost_proposer_idx = proposer_index;\n        };\n\n        // proposer_index is an option<u64>. it can be none.\n        if (option::is_some(&proposer_index)) {\n            let cur_proposer_index = option::extract(&mut proposer_index);\n            // Here, if the proposer is a validator that exits during the epoch, this match will fail.\n            // We don't want to error out here, since this is in the prologue.\n            if (cur_proposer_index < validator_len) {\n                let validator = vector::borrow_mut(&mut validator_perf.validators, cur_proposer_index);\n                spec {\n                    assume validator.successful_proposals + 1 <= MAX_U64;\n                };\n                validator.successful_proposals = validator.successful_proposals + 1;\n            };\n        };\n\n        let f = 0;\n        let f_len = vector::length(&failed_proposer_indices);\n        while ({\n            spec {\n                invariant len(validator_perf.validators) == validator_len;\n            };\n            f < f_len\n        }) {\n            let validator_index = *vector::borrow(&failed_proposer_indices, f);\n            if (validator_index < validator_len) {\n                let validator = vector::borrow_mut(&mut validator_perf.validators, validator_index);\n                spec {\n                    assume validator.failed_proposals + 1 <= MAX_U64;\n                };\n                validator.failed_proposals = validator.failed_proposals + 1;\n            };\n            f = f + 1;\n        };",
+      "verify_payload": {
+        "function_id": "stake_update_perf",
+        "passed": false,
+        "exit_code": 1,
+        "stdout": "{\n  \"Error\": \"Move Prover failed: exiting with condition generation errors\"\n}\n",
+        "stderr": "[INFO] preparing module 0x1::stake\n[INFO] generating verification conditions\n[INFO] 12 verification conditions (for shard #1 of 5)\n[INFO] running solver\n[INFO] generating verification conditions\n[INFO] 11 verification conditions (for shard #2 of 5)\n\u001b[0m\u001b[1m\u001b[38;5;9merror\u001b[0m\u001b[1m: verification out of resources/timeout (global timeout set to 40s)\u001b[0m\n     \u001b[0m\u001b[36m\u250c\u2500\u001b[0m E:\\src\\move-poc\\synth\\framework_workspace\\aptos-framework\\sources\\stake.move:1277:5\n     \u001b[0m\u001b[36m\u2502\u001b[0m  \n\u001b[0m\u001b[36m1277\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u256d\u001b[0m     \u001b[0m\u001b[31mpublic(friend) fun update_performance_statistics(\u001b[0m\n\u001b[0m\u001b[36m1278\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[31m        proposer_index: Option<u64>, failed_proposer_indices: vector<u64>\u001b[0m\n\u001b[0m\u001b[36m1279\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[31m    ) acquires ValidatorPerformance {let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);\u001b[0m\n\u001b[0m\u001b[36m1280\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[31m        let validator_len = vector::length(&validator_perf.validators);\u001b[0m\n     \u001b[0m\u001b[36m\u00b7\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m\n\u001b[0m\u001b[36m1316\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[31m            f = f + 1;\u001b[0m\n\u001b[0m\u001b[36m1317\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[31m        };}\u001b[0m\n     \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2570\u001b[0m\u001b[0m\u001b[31m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500^\u001b[0m\n\n",
+        "command": [
+          "C:\\Users\\96247\\AppData\\Local\\Microsoft\\WinGet\\Packages\\AptosCore.aptos_Microsoft.Winget.Source_8wekyb3d8bbwe\\aptos.exe",
+          "move",
+          "prove",
+          "--package-dir",
+          "E:\\src\\move-poc\\synth\\framework_workspace\\aptos-framework",
+          "--filter",
+          "stake"
+        ],
+        "prove_time_sec": 58.24,
+        "splice_succeeded": true,
+        "error_summary": "error: verification out of resources/timeout (global timeout set to 40s)"
+      }
+    },
+    {
+      "baseline": "B3",
+      "id": "stake_update_perf",
+      "passed": false,
+      "exit_code": 1,
+      "prove_time_sec": 1.57,
+      "error_summary": "error: invalid old(..) expression in inline spec block",
+      "extraction_failed": false,
+      "body": "let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);\n    let validator_len = vector::length(&validator_perf.validators);\n\n    if (option::is_some(&proposer_index)) {\n        let cur_proposer_index = option::extract(&mut proposer_index);\n        if (cur_proposer_index < validator_len) {\n            let validator = vector::borrow_mut(&mut validator_perf.validators, cur_proposer_index);\n            validator.successful_proposals = validator.successful_proposals + 1;\n        };\n    };\n\n    let f = 0;\n    let f_len = vector::length(&failed_proposer_indices);\n    while ({\n        spec {\n            invariant len(validator_perf.validators) == validator_len;\n            invariant (option::is_some(ghost_proposer_idx) && option::borrow(ghost_proposer_idx) < validator_len) ==>\n                (validator_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals ==\n                 old(validator_perf).validators[option::borrow(ghost_proposer_idx)].successful_proposals + 1);\n        };\n        f < f_len\n    }) {\n        let validator_index = *vector::borrow(&failed_proposer_indices, f);\n        if (validator_index < validator_len) {\n            let validator = vector::borrow_mut(&mut validator_perf.validators, validator_index);\n            validator.failed_proposals = validator.failed_proposals + 1;\n        };\n        f = f + 1;\n    };",
+      "verify_payload": {
+        "function_id": "stake_update_perf",
+        "passed": false,
+        "exit_code": 1,
+        "stdout": "{\n  \"Error\": \"Move Prover failed: exiting with 1 error in compilation\"\n}\n",
+        "stderr": "\n\n--- compile errors captured by retry ---\nCompiling, may take a little while to download git dependencies...\nINCLUDING DEPENDENCY AptosStdlib\nINCLUDING DEPENDENCY MoveStdlib\nBUILDING AptosFramework\n\u001b[0m\u001b[1m\u001b[38;5;9merror\u001b[0m\u001b[1m: invalid old(..) expression in inline spec block\u001b[0m\n     \u001b[0m\u001b[36m\u250c\u2500\u001b[0m E:\\src\\move-poc\\synth\\framework_workspace\\aptos-framework\\sources\\stake.move:1295:13\n     \u001b[0m\u001b[36m\u2502\u001b[0m    \n\u001b[0m\u001b[36m1295\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u256d\u001b[0m \u001b[0m\u001b[36m\u256d\u001b[0m             \u001b[0m\u001b[31minvariant (option::is_some(ghost_proposer_idx) && option::borrow(ghost_proposer_idx) < validator_len) ==>\u001b[0m\n\u001b[0m\u001b[36m1296\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m                (validator_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals ==\u001b[0m\n\u001b[0m\u001b[36m1297\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m                 old(validator_perf).validators[option::borrow(ghost_proposer_idx)].successful_proposals + 1);\u001b[0m\n     \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2502\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m                      \u001b[0m\u001b[36m--------------\u001b[0m \u001b[0m\u001b[36mthis expression is not a function parameter\u001b[0m\n     \u001b[0m\u001b[36m\u2502\u001b[0m \u001b[0m\u001b[31m\u2570\u001b[0m\u001b[0m\u001b[31m\u2500\u001b[0m\u001b[0m\u001b[36m\u2502\u001b[0m\u001b[0m\u001b[31m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500^\u001b[0m\n     \u001b[0m\u001b[36m\u2502\u001b[0m   \u001b[0m\u001b[36m\u2570\u001b[0m\u001b[0m\u001b[36m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500' only a function parameter is allowed in old(..) expressions in inline spec block\u001b[0m\n\n",
+        "command": [
+          "C:\\Users\\96247\\AppData\\Local\\Microsoft\\WinGet\\Packages\\AptosCore.aptos_Microsoft.Winget.Source_8wekyb3d8bbwe\\aptos.exe",
+          "move",
+          "prove",
+          "--package-dir",
+          "E:\\src\\move-poc\\synth\\framework_workspace\\aptos-framework",
+          "--filter",
+          "stake"
+        ],
+        "prove_time_sec": 1.57,
+        "splice_succeeded": true,
+        "error_summary": "error: invalid old(..) expression in inline spec block"
+      }
+    },
+    {
+      "baseline": "B3_FB1",
+      "id": "stake_update_perf",
+      "passed": true,
+      "exit_code": 0,
+      "prove_time_sec": 72.74,
+      "error_summary": "",
+      "extraction_failed": false,
+      "body": "spec {\n    update ghost_proposer_idx = proposer_index;\n};\n\nlet validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);\nlet validator_len = vector::length(&validator_perf.validators);\n\nif (option::is_some(&proposer_index)) {\n    let cur_proposer_index = option::extract(&mut proposer_index);\n    if (cur_proposer_index < validator_len) {\n        let validator = vector::borrow_mut(&mut validator_perf.validators, cur_proposer_index);\n        spec {\n            assume validator.successful_proposals + 1 <= MAX_U64;\n        };\n        validator.successful_proposals = validator.successful_proposals + 1;\n    };\n};\n\nspec {\n    update ghost_valid_perf = validator_perf;\n};\n\nlet f = 0;\nlet f_len = vector::length(&failed_proposer_indices);\nwhile ({\n    spec {\n        invariant len(validator_perf.validators) == validator_len;\n        invariant (option::is_some(ghost_proposer_idx)\n                    && option::borrow(ghost_proposer_idx) < validator_len) ==>\n            validator_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals\n            == ghost_valid_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals;\n        invariant f <= f_len;\n    };\n    f < f_len\n}) {\n    let validator_index = *vector::borrow(&failed_proposer_indices, f);\n    if (validator_index < validator_len) {\n        let validator = vector::borrow_mut(&mut validator_perf.validators, validator_index);\n        spec {\n            assume validator.failed_proposals + 1 <= MAX_U64;\n        };\n        validator.failed_proposals = validator.failed_proposals + 1;\n    };\n    f = f + 1;\n};",
+      "verify_payload": {
+        "function_id": "stake_update_perf",
+        "passed": true,
+        "exit_code": 0,
+        "stdout": "{\n  \"Result\": \"Success\"\n}\n",
+        "stderr": "[INFO] preparing module 0x1::stake\n[INFO] generating verification conditions\n[INFO] 12 verification conditions (for shard #1 of 5)\n[INFO] running solver\n[INFO] generating verification conditions\n[INFO] 11 verification conditions (for shard #2 of 5)\n[INFO] running solver\n[INFO] generating verification conditions\n[INFO] 6 verification conditions (for shard #3 of 5)\n[INFO] running solver\n[INFO] generating verification conditions\n[INFO] 11 verification conditions (for shard #4 of 5)\n[INFO] running solver\n[INFO] generating verification conditions\n[INFO] 14 verification conditions (for shard #5 of 5)\n[INFO] running solver\n[INFO] 5.12s build, 1.59s trafo, 0.22/0.22/0.20/0.21/0.22s gen, 13.15/10.62/9.12/16.28/15.52s verify, total 72.47s\n",
+        "command": [
+          "C:\\Users\\96247\\AppData\\Local\\Microsoft\\WinGet\\Packages\\AptosCore.aptos_Microsoft.Winget.Source_8wekyb3d8bbwe\\aptos.exe",
+          "move",
+          "prove",
+          "--package-dir",
+          "E:\\src\\move-poc\\synth\\framework_workspace\\aptos-framework",
+          "--filter",
+          "stake"
+        ],
+        "prove_time_sec": 72.74,
+        "splice_succeeded": true,
+        "error_summary": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+<<<BODY
+    let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+    let validator_len = vector::length(&validator_perf.validators);
+
+    vector::for_each_ref(&failed_proposer_indices, |validator_index| {
+        let validator_index = *validator_index;
+        if (validator_index < validator_len) {
+            let validator = vector::borrow_mut(&mut validator_perf.validators, validator_index);
+            validator.failed_proposals = validator.failed_proposals + 1;
+        };
+    });
+
+    if (option::is_some(&proposer_index)) {
+        let proposer_index = option::extract(&mut proposer_index);
+        if (proposer_index < validator_len) {
+            let validator = vector::borrow_mut(&mut validator_perf.validators, proposer_index);
+            validator.successful_proposals = validator.successful_proposals + 1;
+        };
+    };
+BODY>>>

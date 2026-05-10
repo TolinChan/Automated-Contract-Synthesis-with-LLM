@@ -1,0 +1,17 @@
+{
+  "model": "openai/gpt-5.5",
+  "provider": "ofox",
+  "function_id": "stake_update_perf",
+  "max_tokens": 16000,
+  "results": [
+    {
+      "baseline": "B1",
+      "id": "stake_update_perf",
+      "passed": true,
+      "exit_code": 0,
+      "prove_time_sec": 66.85,
+      "error_summary": "",
+      "extraction_failed": false
+    }
+  ]
+}

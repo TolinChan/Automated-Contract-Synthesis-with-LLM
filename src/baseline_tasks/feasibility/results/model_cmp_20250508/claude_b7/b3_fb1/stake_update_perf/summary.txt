@@ -1,0 +1,1 @@
+stake_update_perf: passed=True exit=0 time=72.74s summary=''

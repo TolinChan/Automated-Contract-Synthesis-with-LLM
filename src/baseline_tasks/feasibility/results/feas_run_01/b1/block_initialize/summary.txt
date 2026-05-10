@@ -1,1 +1,0 @@
-block_initialize: passed=True exit=0 time=31.52s summary=''

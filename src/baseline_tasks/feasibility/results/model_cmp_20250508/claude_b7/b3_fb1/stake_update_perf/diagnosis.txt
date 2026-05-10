@@ -1,0 +1,43 @@
+CATEGORY: compile_error
+
+ROOT_CAUSE: The while-header inline spec block uses `old(validator_perf)`, but `old(..)` inside an inline spec block is only allowed on function parameters — `validator_perf` is a local `let` binding. This is the classic "while-header loop invariant: never use old(...)" idiom violation. Additionally, the postcondition is phrased in terms of the module-level ghost `ghost_proposer_idx`, which the body never updates, so even after fixing the `old(..)` error the ensures will not be provable.
+
+FIX_INSTRUCTION:
+
+1. Remove the `old(..)` from the loop invariant. The failed-proposer loop does not modify `successful_proposals`, so you can state the invariant directly against the current value, anchored to a snapshot taken before the loop.
+
+   Add, immediately before the `while` loop:
+   ```
+   spec {
+       update ghost_valid_perf = validator_perf;
+   };
+   ```
+   (or capture the successful-proposals count of the proposer in a ghost var). Then rewrite the header invariant without `old`:
+   ```
+   while ({
+       spec {
+           invariant len(validator_perf.validators) == validator_len;
+           invariant (option::is_some(ghost_proposer_idx)
+                     && option::borrow(ghost_proposer_idx) < validator_len) ==>
+               validator_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals
+               == ghost_valid_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals;
+           invariant f <= f_len;
+       };
+       f < f_len
+   }) { ... }
+   ```
+
+2. Initialise the ghost proposer index so the ensures clause has something to refer to. At the very top of the function body insert:
+   ```
+   spec {
+       update ghost_proposer_idx = proposer_index;
+   };
+   ```
+   This addresses the ghost-variable-spec-update idiom: the spec mentions `ghost_proposer_idx` but the body never assigns it.
+
+3. (Recommended) Add an overflow assume before the increment to avoid an overflow VC:
+   ```
+   spec { assume validator.successful_proposals + 1 <= MAX_U64; };
+   validator.successful_proposals = validator.successful_proposals + 1;
+   ```
+   and similarly before `validator.failed_proposals = validator.failed_proposals + 1;` inside the loop.

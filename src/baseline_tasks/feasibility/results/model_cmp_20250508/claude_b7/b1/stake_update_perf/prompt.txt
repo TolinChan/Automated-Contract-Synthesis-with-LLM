@@ -1,0 +1,46 @@
+Task: Write the body of a Move function so that it satisfies the formal specification.
+
+The body must, when placed between the function's outer braces and verified with
+`aptos move prove`, satisfy EVERY clause of the spec block — `aborts_if`,
+`ensures`, `requires`, `modifies`, etc.
+
+Constraints:
+- Move (Aptos dialect) source code only — no English commentary inside the body.
+- Use only standard built-ins, the items implied by the signature, or items declared in the
+  same module. (You are NOT given module context in this baseline.)
+- Do NOT modify the spec block — your output is the function BODY, not the whole function.
+
+=== Function Signature (do not repeat in your output) ===
+public(friend) fun update_performance_statistics(
+        proposer_index: Option<u64>, failed_proposer_indices: vector<u64>
+    ) acquires ValidatorPerformance {
+
+=== Formal Specification ===
+spec update_performance_statistics {
+        // This function is expected to be used after genesis.
+        requires chain_status::is_operating();
+        // This function should never abort.
+        aborts_if false;
+
+        let validator_perf = global<ValidatorPerformance>(@aptos_framework);
+        let post post_validator_perf = global<ValidatorPerformance>(@aptos_framework);
+        let validator_len = len(validator_perf.validators);
+        ensures (
+            option::is_some(ghost_proposer_idx)
+                && option::borrow(ghost_proposer_idx) < validator_len
+        ) ==>
+            (
+                post_validator_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals ==
+                validator_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals
+                + 1
+            );
+    }
+
+=== Output format ===
+Return ONLY the function body, with the wrapper markers shown below. The body is the
+code that would go between the outer `{` and `}` of the function. Do not include the
+braces themselves, do not repeat the signature, do not add prose.
+
+<<<BODY
+... your Move code here ...
+BODY>>>

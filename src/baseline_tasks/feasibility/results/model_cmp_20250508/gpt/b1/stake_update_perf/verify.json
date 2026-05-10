@@ -1,0 +1,19 @@
+{
+  "function_id": "stake_update_perf",
+  "passed": true,
+  "exit_code": 0,
+  "stdout": "{\n  \"Result\": \"Success\"\n}\n",
+  "stderr": "\u001b[0m\u001b[1m\u001b[38;5;11mwarning\u001b[0m\u001b[1m: Unused value of parameter `failed_proposer_indices`. Consider removing the parameter, or prefixing with an underscore (e.g., `_failed_proposer_indices`), or binding to `_`\u001b[0m\n     \u001b[0m\u001b[36m\u250c\u2500\u001b[0m E:\\src\\move-poc\\synth\\framework_workspace\\aptos-framework\\sources\\stake.move:1278:38\n     \u001b[0m\u001b[36m\u2502\u001b[0m\n\u001b[0m\u001b[36m1278\u001b[0m \u001b[0m\u001b[36m\u2502\u001b[0m         proposer_index: Option<u64>, \u001b[0m\u001b[33mfailed_proposer_indices\u001b[0m: vector<u64>\n     \u001b[0m\u001b[36m\u2502\u001b[0m                                      \u001b[0m\u001b[33m^^^^^^^^^^^^^^^^^^^^^^^\u001b[0m\n\n[INFO] preparing module 0x1::stake\n[INFO] generating verification conditions\n[INFO] 12 verification conditions (for shard #1 of 5)\n[INFO] running solver\n[INFO] generating verification conditions\n[INFO] 11 verification conditions (for shard #2 of 5)\n[INFO] running solver\n[INFO] generating verification conditions\n[INFO] 6 verification conditions (for shard #3 of 5)\n[INFO] running solver\n[INFO] generating verification conditions\n[INFO] 11 verification conditions (for shard #4 of 5)\n[INFO] running solver\n[INFO] generating verification conditions\n[INFO] 14 verification conditions (for shard #5 of 5)\n[INFO] running solver\n[INFO] 5.10s build, 1.58s trafo, 0.22/0.21/0.21/0.21/0.22s gen, 12.83/10.87/9.54/11.33/14.25s verify, total 66.57s\n",
+  "command": [
+    "C:\\Users\\96247\\AppData\\Local\\Microsoft\\WinGet\\Packages\\AptosCore.aptos_Microsoft.Winget.Source_8wekyb3d8bbwe\\aptos.exe",
+    "move",
+    "prove",
+    "--package-dir",
+    "E:\\src\\move-poc\\synth\\framework_workspace\\aptos-framework",
+    "--filter",
+    "stake"
+  ],
+  "prove_time_sec": 66.85,
+  "splice_succeeded": true,
+  "error_summary": ""
+}

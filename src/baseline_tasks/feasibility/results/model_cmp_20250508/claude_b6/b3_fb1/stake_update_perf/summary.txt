@@ -1,0 +1,1 @@
+stake_update_perf: passed=False exit=1 time=20.88s summary='error: base case of the loop invariant does not hold'

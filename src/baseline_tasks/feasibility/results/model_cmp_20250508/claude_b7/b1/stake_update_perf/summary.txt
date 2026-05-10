@@ -1,0 +1,1 @@
+stake_update_perf: passed=False exit=1 time=58.24s summary='error: verification out of resources/timeout (global timeout set to 40s)'

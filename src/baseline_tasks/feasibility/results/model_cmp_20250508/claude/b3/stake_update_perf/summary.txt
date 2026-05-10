@@ -1,0 +1,1 @@
+stake_update_perf: passed=False exit=1 time=58.28s summary='error: unexpected boogie output: `*** MODEL'
