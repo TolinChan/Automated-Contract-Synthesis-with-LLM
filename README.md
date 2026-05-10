@@ -1,67 +1,138 @@
-# Automated Contract Synthesis and Repair with LLM
+# MoVES: Move Verified Execution Synthesis
 
-面向 **Aptos Move** 智能合约的自动化合成与修复研究：以 **Move Prover** 与 **`aptos move test`** 为金标准，构建可复现的 Coding Agent / LLM 基线任务集，并配套判分脚本、固定 Prompt、冻结验证器日志与可选 API 调用流程。
+**Spec-driven smart-contract synthesis for Aptos Move with verifier-in-the-loop feedback.**
 
-## 当前状态（截至仓库快照）
+MoVES 是一个面向 Aptos Move 的自动化合成系统，核心任务是 **Spec→Code**：给定函数的 `requires` / `ensures` / `aborts_if` / `modifies` 形式化规约，让 LLM 自动生成通过 Move Prover 验证的函数体。
 
-- **任务集**：已在元数据与脚本层面对齐 **T0–T2**（`hello_prover` 证明类 ×2 + `hello_blockchain` 测试类 ×1）以及 **M1–M3**（源自 [move-by-examples](https://github.com/aptos-labs/move-by-examples) 思路的较大体量包：NFT 市场、FA 归属、高级 Todo）。
-- **可复现协议**：每个任务目录含 `TASK.md`、`PROMPT.txt`、冻结的 `fail.log`（及/或 `prove.move` 等参考物），便于固定输入、对照不同模型或 Agent。
-- **自动化工具**（Python 3，主要使用标准库）：
-  - `check_task.py`：对 T0/T1 执行 `aptos move prove`，对 T2 执行 `aptos move test`。
-  - `apply_and_check_mbe.py`：对 M1–M3 机械合并模型输出的 Move 代码块后跑测试（**禁止人工改补丁**的 Pass@1 口径）。
-  - `invoke_ofox_once.py`：可选，通过 OpenAI 兼容 API（如 OFOX）单轮拉取模型补丁。
-  - `agent_verify_loop.py`：同一对话内多轮「写文件 → prove/test → 反馈」，记录 `rounds_to_success`（与 Pass@1 不同，见下）。
-- **实验记录**：[`src/baseline_tasks/RESULTS_LOG.md`](src/baseline_tasks/RESULTS_LOG.md) 汇总 Pass@1 与多轮指标口径及已跑批次摘要；[`doc/poc_llm_trial.md`](doc/poc_llm_trial.md) 记录早期 hello_prover 注入 PoC。
-- **环境说明**：[`doc/ENV_SETUP.md`](doc/ENV_SETUP.md) 记录已验证的 Aptos CLI、Boogie 3.5.1、Z3 与本地 `aptos-framework` 布局（Windows / 本机路径为示例）。
+与现有工作（如 MSG 的 Code→Spec 方向）相反，MoVES  tackle 的是更困难的逆向问题，并通过**双角色架构**（独立的 Code Generation Role + Error Diagnosis Role）解决单模型在形式化验证反馈中的自我辩护偏差（self-justification bias）。
 
-## 指标说明（避免混用）
+## 核心发现（Feasibility Test）
 
-| 指标 | 含义 |
-|------|------|
-| **Pass@1** | 模型**仅一轮**输出，经脚本**原样**写入后，**一次** `prove` / `test` 是否成功；不含人工改补丁或第二轮模型输出。 |
-| **rounds_to_success** | `agent_verify_loop.py` 在同一会话内多轮修复，**首次**验证通过时的轮次；耗尽 `max_rounds` 则记失败（见各任务 `loop_runs/*/summary.json`）。 |
+在 5 个 aptos-framework 函数上的可行性验证：
 
-## 仓库结构（摘要）
+| Baseline | 设置 | stake_update_perf 结果 | 整体通过率 |
+|---|---|---|---|
+| B1 | Zero-shot（签名 + Spec） | **FAIL** | 4/5 (80%) |
+| B3 | Zero-shot + 模块上下文 | **FAIL** | 4/5 (80%) |
+| B6 | 1 轮 generic feedback | **FAIL** | 4/5 |
+| B7 | 3 轮 generic feedback | **FAIL** | 4/5 |
+| Manual-diag | 手写结构化诊断 + 1 轮反馈 | **PASS (76.95 s)** | 5/5 |
 
-| 路径 | 说明 |
-|------|------|
-| [`src/baseline_tasks/`](src/baseline_tasks/README.md) | 任务元数据、脚本、结果模板与部分 `loop_runs` 历史产物 |
-| [`src/baseline_tasks/scripts/`](src/baseline_tasks/scripts/) | `check_task.py`、`apply_and_check_mbe.py`、`invoke_ofox_once.py`、`agent_verify_loop.py` 等 |
-| [`doc/ENV_SETUP.md`](doc/ENV_SETUP.md) | Move Prover 与基线包路径说明 |
-| [`plans/move_examples_baseline_规划.md`](plans/move_examples_baseline_规划.md) | 从官方 `move-examples` 选型的规划与实验流程 |
-| [`plans/timeline.md`](plans/timeline.md) | 项目里程碑与时间线 |
-| [`experiments/poc_logs/`](experiments/poc_logs/) | PoC 阶段 prover 通过/失败日志摘录，供报告引用 |
-| [`paper/related_work/`](paper/related_work/) | 文献调研笔记 |
-| [`doc/`](doc/) | 研究日志、调研发现、环境说明等文档 |
-| 根目录其他 `.md` | 开题/调研/笔记类草稿（随课题迭代） |
+关键结论：**codegen 能力足够，瓶颈在 diagnose**。零轮合成通过 80%，但失败的 `stake_update_perf`（含 ghost vars、while-loop invariants、overflow assumes 三个验证习语）无法被 generic feedback 修复；一旦提供手写结构化诊断，同一模型 1 轮即通过。
 
-## 环境 prerequisites
+多模型对比（同一函数）：
+- **Kimi**：zero-shot 及 generic feedback 均失败
+- **Claude Opus 4.7**：在 MoVES 双角色框架下，1 轮结构化诊断通过（72.7 s）
+- **GPT 5.5**：zero-shot 看似通过，但人工检查发现其**完全省略了 `failed_proposer_indices` 逻辑**，暴露 Pass@1 指标的系统性缺陷
 
-1. **Aptos CLI**、**Boogie 3.5.1.x**、**Z3**、**.NET 8**（用于 Prover 链路）；T2 / M 系列以 `aptos move test` 为主时要求略低。
-2. 本地 **`aptos-framework`**（或完整 `aptos-core`）与各 **Move 包** 需按你的机器布局放置；详细版本与命令见 [`doc/ENV_SETUP.md`](doc/ENV_SETUP.md)。
+## 仓库结构
 
-## 重要：Move 包路径
+```
+.
+├── paper/                          # ASE 格式论文（IEEEtran）
+│   ├── overleaf/                   # LaTeX 源文件
+│   │   ├── main.tex                # 主文件（引用 7 个章节）
+│   │   ├── references.bib          # BibTeX 数据库
+│   │   └── sections/               # 各章节 .tex 文件
+│   └── 论文草稿素材/                # 旧草稿归档
+│
+├── src/baseline_tasks/
+│   ├── feasibility/                # 可行性实验框架
+│   │   ├── registry.json           # 5 个测试函数注册表
+│   │   ├── scripts/                # 合成与验证脚本
+│   │   │   ├── synth_loop.py       # 反馈循环主控
+│   │   │   ├── diagnose.py         # 诊断角色 prompt
+│   │   │   └── verify_synth.py     # 调用 aptos move prove
+│   │   ├── results/                # 实验结果（按 run 编号）
+│   │   │   ├── feas_run_02/        # Phase A/B 完整结果
+│   │   │   └── model_cmp_20250508/ # 多模型对比（Claude/GPT）
+│   │   └── AGENT_LOOP_DESIGN.md    # 双角色架构设计文档
+│   │
+│   └── scripts/                    # 通用判分脚本
+│       ├── check_task.py           # T0–T2 验证
+│       ├── apply_and_check_mbe.py  # M1–M3 测试
+│       ├── agent_verify_loop.py    # 多轮 rounds_to_success
+│       └── loop_tasks.py           # 任务注册表
+│
+├── doc/
+│   ├── ENV_SETUP.md                # Move Prover 环境配置
+│   ├── workflow.md                 # 文字版系统流程
+│   └── 思维导图.png                 # 系统架构图
+│
+├── plans/                          # 项目规划与时间线
+├── experiments/poc_logs/           # PoC 阶段日志
+└── CLAUDE.md                       # 本项目给 Claude Code 的指令
+```
 
-判分脚本内 **Move 包目录默认为本机 Windows 绝对路径**（例如 `E:\src\move-poc\baseline\...`）。在其他机器或 Linux 上复现时，请修改 [`src/baseline_tasks/scripts/check_task.py`](src/baseline_tasks/scripts/check_task.py)、[`apply_and_check_mbe.py`](src/baseline_tasks/scripts/apply_and_check_mbe.py)、[`loop_tasks.py`](src/baseline_tasks/scripts/loop_tasks.py) 等与 `PACKAGES` / 包根相关的常量，使其指向你本地的任务副本，并与各任务 `Move.toml` 中的 `aptos-framework` 依赖一致。
+## 环境配置
+
+运行 Move Prover（T0/T1 及 feasibility test 必需）：
+
+```powershell
+$env:BOOGIE_EXE = "C:\Users\96247\.dotnet\tools\boogie.exe"
+$env:Z3_EXE     = "E:\tools\z3_extract\z3-4.13.0-x64-win\bin\z3.exe"
+```
+
+版本锁：
+- Aptos CLI **9.1.0**
+- Boogie **3.5.1.x**（更高版本会被 Aptos CLI 拒绝）
+- Z3 **4.13.0**
+- .NET SDK **8.x**
+
+完整环境说明见 [`doc/ENV_SETUP.md`](doc/ENV_SETUP.md)。
 
 ## 快速开始
 
+### 跑单个可行性验证
+
 ```powershell
-# 1. 按 doc/ENV_SETUP.md 配置 BOOGIE_EXE、Z3_EXE（T0/T1 需要）
-# 2. 在已放置 Move 包的前提下，于 scripts 目录判分示例：
+cd src\baseline_tasks\feasibility\scripts
+# B1 zero-shot
+python synth_b1.py --function stake_update_perf
+
+# B6 带 1 轮 generic feedback
+python synth_b6.py --function stake_update_perf
+
+# 结果写入 results/<run_id>/<baseline>/<function>/
+```
+
+### 跑通用任务验证
+
+```powershell
 cd src\baseline_tasks\scripts
+# T0/T1: Move Prover
 python check_task.py --task-id t0_plus1
 
-# M1–M3（需先准备 model_response.txt 或 API 输出）
+# T2: aptos move test
+python check_task.py --task-id t2_hello_blockchain
+
+# M1–M3: 提取模型输出并跑测试
 python apply_and_check_mbe.py --task mbe_nft_marketplace
 ```
 
-可选 API：在项目根目录创建 `.env` 并设置 `OFOX_API_KEY`（**勿提交密钥**；`.gitignore` 已忽略 `.env`）。详见 [`baseline_tasks/README.md`](baseline_tasks/README.md)。
+### 多轮反馈循环
 
-## 公开仓库
+```powershell
+python agent_verify_loop.py --task t2_hello_blockchain --max-rounds 5
+```
 
-远程地址：<https://github.com/TolinChan/Automated-Contract-Synthesis-with-LLM.git>
+## 指标说明
 
-## License
+| 指标 | 含义 | 脚本 |
+|---|---|---|
+| **Pass@1** | 模型仅一轮输出，脚本原样写入后一次验证即通过；不含人工修改或第二轮输出 | `invoke_ofox_once.py` + `apply_and_check_mbe.py` |
+| **rounds_to_success** | 同一会话内多轮反馈修复，首次验证通过的轮次；耗尽 `max_rounds` 记失败 | `agent_verify_loop.py` |
 
-未随仓库声明默认许可证；若公开分发，建议由作者补充 `LICENSE` 文件。
+**两者不可混用**。详见 `src/baseline_tasks/RESULTS_LOG.md`。
+
+## 论文
+
+当前 ASE 格式论文（IEEEtran，双盲审）位于 [`paper/overleaf/`](paper/overleaf/)，结构：
+
+- Intro：已完成，含 Motivating Example 与多模型对比
+- Background / Related Work / Design / Evaluation / Discussion / Conclusion：骨架已搭建，待填充
+
+## 关联仓库
+
+- 个人仓库（本仓库）：https://github.com/TolinChan/Automated-Contract-Synthesis-with-LLM
+- Lab 仓库：https://github.com/declarative-systems-lab/smart-contracts-synthesis
