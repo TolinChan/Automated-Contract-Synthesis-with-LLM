@@ -100,7 +100,13 @@ def write_round(
 
 
 def run_loop_one(
-    fn_id: str, run_dir: Path, *, feedback_rounds: int, max_tokens: int
+    fn_id: str,
+    run_dir: Path,
+    *,
+    feedback_rounds: int,
+    max_tokens: int,
+    provider: str | None = None,
+    model: str | None = None,
 ) -> dict:
     inp = FunctionInputs.load(fn_id)
     out_dir = run_dir / fn_id
@@ -108,7 +114,7 @@ def run_loop_one(
 
     # ---- Round 0: B3-style attempt ----
     prompt0 = build_b3_prompt(inp)
-    resp0 = call_llm_for_body(prompt0, max_tokens=max_tokens)
+    resp0 = call_llm_for_body(prompt0, max_tokens=max_tokens, provider=provider, model=model)
     body0 = extract_body(resp0)
     verify0 = verify_or_extraction_failed(fn_id, body0)
     write_round(rounds_dir / "round_0", prompt=prompt0, response=resp0, body=body0, verify_payload=verify0)
@@ -144,12 +150,14 @@ def run_loop_one(
                     prover_stdout=previous_verify.get("stdout", ""),
                     prover_stderr=previous_verify.get("stderr", ""),
                     max_tokens=32000,
+                    provider=provider,
+                    model=model,
                 )
             except Exception as exc:
                 diagnosis_text = f"(diagnosis call failed: {type(exc).__name__}: {exc})"
 
             prompt_k = build_feedback_prompt(inp, previous_body, diagnosis_text)
-            resp_k = call_llm_for_body(prompt_k, max_tokens=max_tokens)
+            resp_k = call_llm_for_body(prompt_k, max_tokens=max_tokens, provider=provider, model=model)
             body_k = extract_body(resp_k)
             verify_k = verify_or_extraction_failed(fn_id, body_k)
             write_round(
@@ -209,6 +217,8 @@ def main() -> int:
         help="Number of feedback rounds AFTER round 0 (B6=1, B7=3).",
     )
     p.add_argument("--id", help="Function id (omit to run all in registry).")
+    p.add_argument("--provider", default=None, help="LLM provider: kimi or deepseek (default: env LLM_PROVIDER or kimi).")
+    p.add_argument("--model", default=None, help="Provider model override.")
     p.add_argument("--max-tokens", type=int, default=32000)
     p.add_argument("--run-id", help="Override run directory name (default: timestamp).")
     p.add_argument(
@@ -237,7 +247,12 @@ def main() -> int:
     for fn in selected:
         try:
             res = run_loop_one(
-                fn.id, run_dir, feedback_rounds=args.feedback_rounds, max_tokens=args.max_tokens
+                fn.id,
+                run_dir,
+                feedback_rounds=args.feedback_rounds,
+                max_tokens=args.max_tokens,
+                provider=args.provider,
+                model=args.model,
             )
             rows.append(
                 {

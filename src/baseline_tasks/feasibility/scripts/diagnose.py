@@ -1,7 +1,7 @@
 """Error-diagnosis LLM call for B6/B7 feedback loops.
 
 Given the spec, signature, the body that failed verification, and the prover
-output, ask Kimi to:
+output, ask the configured LLM to:
     1. Classify the failure (compile error / spec violation / API misuse / ...).
     2. Pinpoint the root cause as specifically as possible.
     3. Suggest a concrete fix the codegen step can apply.
@@ -11,7 +11,7 @@ ingest it without bloating the context window.
 """
 from __future__ import annotations
 
-from kimi_client import chat
+from llm_client import chat
 
 SYSTEM_PROMPT = (
     "You are a senior Move/Move-Prover engineer. Given a function specification, "
@@ -185,6 +185,8 @@ def diagnose(
     prover_stdout: str,
     prover_stderr: str,
     max_tokens: int = 4000,
+    provider: str | None = None,
+    model: str | None = None,
 ) -> str:
     prompt = USER_PROMPT_TEMPLATE.format(
         signature=signature.strip(),
@@ -198,6 +200,8 @@ def diagnose(
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ],
+        provider=provider,
+        model=model,
         temperature=0.2,
         max_tokens=max_tokens,
         timeout_sec=600,

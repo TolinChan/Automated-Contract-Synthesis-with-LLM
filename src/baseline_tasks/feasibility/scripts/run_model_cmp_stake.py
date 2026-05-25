@@ -271,38 +271,17 @@ def call_ofox(messages: list[dict], model: str, max_tokens: int, temperature: fl
 
 
 def call_kimi(messages: list[dict], model: str, max_tokens: int, temperature: float = 0.2) -> str:
-    """Kimi API call (non-streaming to match interface)."""
-    api_url = "https://api.kimi.com/coding/v1/chat/completions"
-    key = _load_kimi_key()
-    body = {
-        "model": model,
-        "messages": messages,
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-        "stream": False,
-    }
-    data = json.dumps(body, ensure_ascii=False).encode("utf-8")
-    req = urllib.request.Request(
-        api_url,
-        data=data,
-        method="POST",
-        headers={
-            "Authorization": f"Bearer {key.strip()}",
-            "Content-Type": "application/json; charset=utf-8",
-            "User-Agent": "claude-cli/2.0.0 (model-comparison)",
-        },
+    """Kimi API call via streaming to avoid nginx 504 gateway timeouts."""
+    import kimi_client
+    return kimi_client.chat(
+        messages,
+        model=model,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        stream=True,
+        retries=3,
+        timeout_sec=300,
     )
-    try:
-        with urllib.request.urlopen(req, timeout=600) as resp:
-            payload = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        err_body = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"Kimi API error {exc.code}: {err_body}") from exc
-
-    try:
-        return payload["choices"][0]["message"]["content"]
-    except (KeyError, IndexError) as exc:
-        raise RuntimeError(f"Unexpected Kimi response structure: {payload}") from exc
 
 
 # ---------------------------------------------------------------------------

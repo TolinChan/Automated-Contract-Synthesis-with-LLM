@@ -1,7 +1,7 @@
 """Shared helpers for B1/B3/B6/B7 drivers.
 
 The driver scripts share:
-    - calling the Kimi LLM with system + user messages
+    - calling the configured LLM with system + user messages
     - extracting the body from the response
     - splicing into the workspace and verifying
     - writing per-function artifacts (prompt/response/extracted_body/verify.json)
@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from body_fence import extract_body
-from kimi_client import chat
+from llm_client import chat
 from metadata_extractor import FEASIBILITY_DIR
 from verify_synth import verify
 
@@ -54,12 +54,21 @@ def utc_run_id() -> str:
     return dt.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
 
 
-def call_llm_for_body(prompt: str, *, max_tokens: int, temperature: float = 0.2) -> str:
+def call_llm_for_body(
+    prompt: str,
+    *,
+    max_tokens: int,
+    temperature: float = 0.2,
+    provider: str | None = None,
+    model: str | None = None,
+) -> str:
     return chat(
         [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ],
+        provider=provider,
+        model=model,
         temperature=temperature,
         max_tokens=max_tokens,
         timeout_sec=600,
@@ -89,9 +98,17 @@ def verify_or_extraction_failed(fn_id: str, body: str | None) -> dict:
     return verify(fn_id, body, timeout_sec=600).to_json()
 
 
-def one_shot_run(fn_id: str, prompt: str, out_dir: Path, *, max_tokens: int) -> dict:
+def one_shot_run(
+    fn_id: str,
+    prompt: str,
+    out_dir: Path,
+    *,
+    max_tokens: int,
+    provider: str | None = None,
+    model: str | None = None,
+) -> dict:
     """Single LLM call + verify; used by B1 and B3. Writes prompt/response/extracted_body/verify.json."""
-    response = call_llm_for_body(prompt, max_tokens=max_tokens)
+    response = call_llm_for_body(prompt, max_tokens=max_tokens, provider=provider, model=model)
     body = extract_body(response)
     write_round_artifacts(out_dir, prompt, response, body)
     verify_payload = verify_or_extraction_failed(fn_id, body)

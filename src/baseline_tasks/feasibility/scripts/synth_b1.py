@@ -67,7 +67,9 @@ def build_b1_prompt(inp: FunctionInputs) -> str:
 def main() -> int:
     p = argparse.ArgumentParser(description="Run B1 (zero-shot) on one or all functions.")
     p.add_argument("--id", help="Function id (omit to run all in registry).")
-    p.add_argument("--max-tokens", type=int, default=16000)
+    p.add_argument("--provider", default=None, help="LLM provider: kimi or deepseek (default: env LLM_PROVIDER or kimi).")
+    p.add_argument("--model", default=None, help="Provider model override.")
+    p.add_argument("--max-tokens", type=int, default=32000)
     p.add_argument("--run-id", help="Override run directory name (default: timestamp).")
     args = p.parse_args()
 
@@ -86,7 +88,16 @@ def main() -> int:
         try:
             inp = FunctionInputs.load(fn.id)
             prompt = build_b1_prompt(inp)
-            rows.append(one_shot_run(fn.id, prompt, run_dir / fn.id, max_tokens=args.max_tokens))
+            rows.append(
+                one_shot_run(
+                    fn.id,
+                    prompt,
+                    run_dir / fn.id,
+                    max_tokens=args.max_tokens,
+                    provider=args.provider,
+                    model=args.model,
+                )
+            )
         except Exception as exc:
             err = f"{fn.id}: ERROR {type(exc).__name__}: {exc}"
             print(err, file=sys.stderr)
