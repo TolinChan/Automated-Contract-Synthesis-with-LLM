@@ -1,0 +1,250 @@
+\section{Motivating Example}\label{sec:motivating-example}
+
+This section presents a motivating feasibility case study that exposes a key reliability gap between \emph{verifier success} and \emph{developer-intended semantics} when synthesizing Move functions.
+Our goal is not to claim statistical generality from this single case; rather, we use it to clarify what kind of feedback is actionable for Move-Prover-driven synthesis and why verifier pass alone can be misleading under partial specifications.
+
+\subsection{Synthesis Task Setup}
+
+We consider the synthesis of the \texttt{update\_performance\_statistics} function from the Aptos \texttt{stake} module.
+Intuitively, this function updates validator performance counters after each block.
+Concretely, it must update both:
+(i)~counters associated with the block proposer (when the proposer index is present), and
+(ii)~counters associated with validators that failed to propose, via an explicit loop over a vector of indices.
+
+The task is constrained by a developer-provided formal specification that we treat as immutable.
+The specification for \texttt{update\_performance\_statistics} (from \texttt{stake.spec.move}) contains a single \texttt{ensures} clause that constrains the successful-proposal counter:\footnote{We reproduce the specification verbatim from the Aptos Framework source tree (commit under review), eliding only unrelated pragmas.}
+\begin{lstlisting}[language=Move,basicstyle=\small\ttfamily]
+spec update_performance_statistics {
+    requires chain_status::is_operating();
+    aborts_if false;
+
+    let validator_perf = global&lt;ValidatorPerformance&gt;(@aptos_framework);
+    let post post_validator_perf = global&lt;ValidatorPerformance&gt;(@aptos_framework);
+    let validator_len = len(validator_perf.validators);
+    ensures (
+        option::is_some(ghost_proposer_idx)
+            && option::borrow(ghost_proposer_idx) < validator_len
+    ) ==>
+        (
+            post_validator_perf.validators[
+                option::borrow(ghost_proposer_idx)
+            ].successful_proposals ==
+            validator_perf.validators[
+                option::borrow(ghost_proposer_idx)
+            ].successful_proposals + 1
+        );
+}
+\end{lstlisting}
+Notably, the \texttt{ensures} clause constrains only the \texttt{successful\_proposals} counter; it does not contain a corresponding post-condition for \texttt{failed\_proposals}.
+Because the specification is \emph{partial}---it captures safety properties and aborts-freedom but does not function as a full functional-equivalence oracle---an implementation that ignores \texttt{failed\_proposer\_indices} can still satisfy the written specification.
+As we will show, this partiality produces ``verifier-passing but semantically incomplete'' implementations.
+
+\subsection{Three Move-Prover Verification Idioms}\label{subsec:three-idioms}
+
+When prompting a state-of-the-art coding LLM to synthesize a function body with only the signature, the fixed specification, and module context, the generated code often fails to pass the Move Prover.
+Through inspection of prover traces, we observe that success requires satisfying three prover-specific idioms that are not native Move syntax and are sparsely reflected in public Move code:
+
+\begin{enumerate}
+    \item \textbf{Ghost-variable updates.}
+    The specification references module-level ghost variables (e.g., \texttt{ghost\_valid\_perf} and \texttt{ghost\_proposer\_idx}).
+    The body must synchronize them using inline \texttt{spec\,\{\,update\,\ldots\,\}} blocks:
+    \begin{lstlisting}[language=Move,basicstyle=\small\ttfamily]
+spec { update ghost_valid_perf = validator_perf; };
+    \end{lstlisting}
+    A regular \texttt{let} binding creates only a local Move variable and is invisible to the prover's specification state.
+
+    \item \textbf{Loop invariants at the \texttt{while} header.}
+    The Move Prover requires invariants to be embedded inside the \texttt{while}-header expression:
+    \begin{lstlisting}[language=Move,basicstyle=\small\ttfamily]
+while ({ spec { invariant ... }; condition }) { body }
+    \end{lstlisting}
+    Placing invariants inside the loop body triggers a compilation-level prover error.
+
+    \item \textbf{Overflow assumptions.}
+    Each \texttt{u64} increment must be preceded by an explicit assumption to keep the generated verification conditions tractable:
+    \begin{lstlisting}[language=Move,basicstyle=\small\ttfamily]
+spec { assume x + 1 <= MAX_U64; };
+    \end{lstlisting}
+    Without such assumptions, the prover emits unbounded arithmetic-overflow verification conditions and may exceed the global timeout.
+\end{enumerate}
+
+These idioms are difficult for general-purpose LLMs to infer from syntax alone: the surface-level code compiles, but the proof obligations fail because the body lacks the idiom-level structure the prover expects.
+
+The only exception in our traces is GPT~5.5, which passes verification in zero-shot without producing any of the three idioms.
+This is possible because its generated body is extremely simple: it updates only the successful-proposal counter and omits the entire \texttt{failed\_proposer\_indices} loop.
+Without the loop, there are no loop invariants to place and no failed-proposal increments that would require overflow assumptions; without ghost-variable updates, the specification's \texttt{ensures} clause happens to be satisfiable because the omitted loop logic is the very part that would trigger the ghost-variable constraints.
+Consequently, GPT~5.5 avoids the verification paths that require the idioms, but at the cost of producing a semantically incomplete body---an instance of the false-verified phenomenon we discuss in \S\ref{subsec:false-verified}.
+
+\subsection{Why Raw Prover Feedback Is Not Actionable}
+
+A natural attempt is to iterate: run the Move Prover on the generated body, feed the raw error trace back to the LLM, and ask for a revised implementation.
+In practice, this ``generic feedback'' loop often fails to converge.
+The prover outputs are machine-level (timeout messages, condition-generation errors, or counterexample traces) and do not directly map to the idiom-level transformations required by the Move Prover.
+
+In the motivating case, generic feedback frequently triggers ``self-justification'' behavior: the model makes superficial syntax changes without discovering the missing ghost updates, invariant placement requirements, or overflow assumptions.
+After one round of raw prover feedback, the auto-diagnoser misclassifies the root cause and suggests replacing \texttt{ghost\_proposer\_idx} in the \texttt{ensures} clause with the function parameter \texttt{proposer\_index}---whereas the actual fix is to add a \texttt{spec\,\{\,update\,\ldots\,\}} block in the body.
+The error type shifts from timeout to ``loop invariants must be declared at the beginning of the loop header,'' but the loop still does not gain the correct invariant structure.
+
+\subsection{Structured Diagnosis and the Emergent Second Failure Mode}
+
+To make prover feedback actionable, MoVES employs a structured diagnosis step that maps raw failures to explicit repair instructions.
+We illustrate its effect by running three representative LLMs on the same synthesis task under different feedback settings.
+
+Table~\ref{tab:model-traces} summarizes the outcomes.
+Columns denote the synthesis setting: \textbf{Zero-shot} = signature + spec only; \textbf{+Ctx} = zero-shot with additional module context; \textbf{+Diag.} = one round of structured diagnosis feedback.
+Cell contents show the verifier result (timeout, error type, or PASS with prove time).
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lcccX}
+\toprule
+\textbf{Model} & \textbf{Zero-shot} & \textbf{+Ctx} & \textbf{+Diag.} & \textbf{Key Finding} \\
+\midrule
+Kimi & \xmark~timeout & \xmark~timeout & \cmark~PASS (77.8~s) & Diagnosis fixes ghost var, but body still semantically incomplete. \\
+Claude Opus 4.7 & \xmark~timeout & \xmark~\texttt{old(..)} error & \cmark~PASS (72.7~s) & Structured diagnosis fixes all idioms in one round. \\
+GPT 5.5 & \cmark~PASS (66.9~s) & --- & --- & \textbf{Code is semantically incomplete.} \\
+\bottomrule
+\end{tabularx}
+\caption{Illustrative model traces on synthesizing \texttt{update\_performance\_statistics}.
+This motivating example is qualitative ($N{=}1$ case) and intended to reveal failure modes rather than provide statistical evidence.}
+\label{tab:model-traces}
+\end{table*}
+
+The concrete verifier timings for Kimi are as follows.
+With signature and specification only (zero-shot, no module context), Kimi times out after 67.03~s; adding module context does not help (59.19~s, still timeout).
+In both settings the prover stderr carries the compiler warning \texttt{Unused value of parameter failed\_proposer\_indices}.
+After one round of structured diagnosis, Kimi's body passes in 77.79~s---yet the very same unused-parameter warning remains in the stderr, because the generated body still omits the loop that would consume \texttt{failed\_proposer\_indices}.
+
+The most informative part is Kimi's structured-diagnosis run: while it succeeds in getting the Move Prover to accept the program, the generated code is still semantically incomplete.
+The structured diagnosis identifies the ghost-variable idiom gap (enabling verifier pass), but the diagnostic taxonomy lacks a category for \emph{semantic-obligation omission}.
+As a result, the model misinterprets the unused-parameter warning as something to be suppressed (e.g., renaming with a leading underscore), instead of inferring that the vector parameter must drive the missing loop logic.
+This produces a second failure mode:
+\begin{quote}
+\em Structured diagnosis can improve verifier success, yet still fail to recover developer-intended semantics when the diagnosis does not capture semantic omissions.
+\end{quote}
+
+\subsection{The Semantic Gap: False-Verified Implementations}\label{subsec:false-verified}
+
+A deeper inspection of the verifier-passing bodies reveals the same core issue: the implementations omit the loop over \texttt{failed\_proposer\_indices}.
+Despite this semantic omission, the Move Prover accepts the generated code because the provided specification constrains only the aspects reflected by ghost-variable relations and certain safety properties, but does not fully enforce the intended behavior over the failed-proposer list.
+
+Figure~\ref{fig:false-verified-code} contrasts Kimi's verifier-passing body (top) against the reference implementation (bottom).
+The top version updates the proposer-related counters but never iterates through \texttt{failed\_proposer\_indices};
+the bottom version includes the required loop, together with the three prover idioms from \S\ref{subsec:three-idioms}.
+
+\begin{figure}[t]
+\centering
+\begin{lstlisting}[language=Move,basicstyle=\scriptsize\ttfamily]
+/* Kimi + Struct. Diag.: verifier-passing but semantically incomplete */
+spec { update ghost_proposer_idx = proposer_index; };
+let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+let validators = &mut validator_perf.validators;
+if (option::is_some(&proposer_index)) {
+    let idx = *option::borrow(&proposer_index);
+    if (idx < vector::length(validators)) {
+        let validator = vector::borrow_mut(validators, idx);
+        validator.successful_proposals = validator.successful_proposals + 1;
+    };
+};
+// NOTE: failed_proposer_indices is never used; no loop, no assume.
+
+/* Reference / semantically complete obligation */
+spec {
+    update ghost_valid_perf = validator_perf;
+    update ghost_proposer_idx = proposer_index;
+};
+let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+let validator_len = vector::length(&validator_perf.validators);
+if (option::is_some(&proposer_index)) {
+    let idx = *option::borrow(&proposer_index);
+    if (idx < validator_len) {
+        let validator = vector::borrow_mut(&mut validator_perf.validators, idx);
+        spec { assume validator.successful_proposals + 1 <= MAX_U64; };
+        validator.successful_proposals = validator.successful_proposals + 1;
+    };
+};
+let f = 0;
+let f_len = vector::length(&failed_proposer_indices);
+while ({
+    spec { invariant f <= f_len;
+           invariant forall j in 0..f:
+               validator_perf.validators[
+                   failed_proposer_indices[j]
+               ].failed_proposals ==
+               ghost_valid_perf.validators[
+                   failed_proposer_indices[j]
+               ].failed_proposals + 1; };
+    f < f_len
+}) {
+    let validator_index = *vector::borrow(&failed_proposer_indices, f);
+    if (validator_index < validator_len) {
+        let validator = vector::borrow_mut(&mut validator_perf.validators, validator_index);
+        spec { assume validator.failed_proposals + 1 <= MAX_U64; };
+        validator.failed_proposals = validator.failed_proposals + 1;
+    };
+    f = f + 1;
+};
+\end{lstlisting}
+\caption{Code comparison: Kimi's verifier-passing body (top) omits the \texttt{failed\_proposer\_indices} loop and the overflow assumptions present in the reference implementation (bottom).
+`MAX\_U64' denotes the maximum value of type `u64', a constant recognized by the Move Prover.
+The Move Prover accepts the top version because the partial specification does not constrain the failed-proposal update.}
+\label{fig:false-verified-code}
+\end{figure}
+
+\subsection{Manual Semantic Coverage Audit (Illustrative)}\label{subsec:semantic-audit}
+
+To separate \emph{verification} from \emph{semantic completeness}, we perform a manual semantic-coverage audit against five developer-oriented obligations:
+(1)~updates successful-proposal counts,
+(2)~handles the \texttt{failed\_proposer\_indices} loop,
+(3)~updates ghost variables,
+(4)~preserves the required \texttt{while}-invariant structure, and
+(5)~adds overflow assumptions before arithmetic increments.
+
+To isolate whether the bottleneck lies in code-generation capability or in diagnosis quality, we perform an oracle probe: we hand-write a structured diagnosis that explicitly names the three missing prover idioms and also flags the missing \texttt{failed\_proposer\_indices} loop as a semantic obligation.
+Feeding this diagnosis into the same codegen prompt produces a verifier-passing body on the first attempt (76.95~s) that is semantically aligned with the reference implementation.
+We stress that this hand-written diagnosis is used only as an upper-bound probe; it is not part of the automated MoVES pipeline.
+
+Table~\ref{tab:semantic-coverage} summarizes the audit outcomes.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lcccc}
+\toprule
+\textbf{Semantic Obligation} &
+\textbf{GPT 5.5 Zero-shot} &
+\textbf{Kimi + Struct.~Diag.} &
+\textbf{Claude + Struct.~Diag.} &
+\textbf{Human Oracle / Ref.} \\
+\midrule
+Updates successful-proposal counts & \cmark & \cmark & \cmark & \cmark \\
+Handles \texttt{failed\_proposer\_indices} loop & \xmark & \xmark & \cmark & \cmark \\
+Updates ghost variables & \xmark & \cmark & \cmark & \cmark \\
+Preserves \texttt{while}-header invariant structure & \xmark & \xmark & \cmark & \cmark \\
+Adds overflow assumptions before \texttt{+= 1} & \xmark & \xmark & \cmark & \cmark \\
+\bottomrule
+\end{tabularx}
+\caption{Manual semantic coverage audit for the motivating example.
+GPT 5.5 and Kimi both achieve verifier success while missing three or four semantic obligations.
+The human-oracle diagnosis is an upper-bound probe and is not part of the automated pipeline.}
+\label{tab:semantic-coverage}
+\end{table*}
+
+This audit reinforces two central takeaways:
+\begin{enumerate}
+    \item \textbf{Verifier pass is necessary but not sufficient} for semantic correctness under partial specifications.
+    \item \textbf{Structured diagnosis must cover semantic-obligation recovery}, not only prover-facing idiom fixes.
+    Otherwise, the generator may reach proof acceptance while still missing essential developer intent (as observed in Kimi and GPT 5.5).
+\end{enumerate}
+
+\subsection{What This Motivating Example Drives}
+
+Driven by the above failure modes, we design MoVES around three requirements:
+\begin{enumerate}
+    \item a dual-role architecture that separates \emph{code generation} from \emph{error diagnosis},
+    \item a Move-Prover-aware diagnosis taxonomy that translates prover failures into idiom-level repair instructions, and
+    \item evaluation using semantic obligations beyond verifier acceptance to detect false-verified implementations.
+\end{enumerate}
+
+Together, these elements address the reliability gap highlighted by the motivating case: \emph{how to make verification feedback actionable without assuming that prover acceptance implies semantic completeness}.

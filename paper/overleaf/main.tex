@@ -8,6 +8,12 @@
 \usepackage{xcolor}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage{pifont}         % Check/cross marks in tables
+\usepackage{tabularx}       % Auto-width tables
+
+% Table symbols
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
 
 % Code listing style for Move
 \lstdefinelanguage{Move}{
@@ -56,6 +62,7 @@
 %  Chapter files
 % ---------------------------------------------------------------------------
 \input{sections/intro}
+\input{sections/motivating_example}
 \input{sections/background}
 \input{sections/related}
 \input{sections/design}
