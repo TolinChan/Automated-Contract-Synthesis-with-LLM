@@ -1,0 +1,33 @@
+    spec add_stake(staker: &signer, operator: address, amount: u64) {
+        // TODO(fa_migration)
+        use aptos_framework::reconfiguration_state;
+        pragma verify_duration_estimate = 600;
+        // TODO: this function times out
+        include stake::ResourceRequirement;
+        aborts_if reconfiguration_state::spec_is_in_progress();
+
+        let staker_address = signer::address_of(staker);
+        include ContractExistsAbortsIf { staker: staker_address };
+        let store = global<Store>(staker_address);
+        let staking_contract = simple_map::spec_get(store.staking_contracts, operator);
+
+        include WithdrawAbortsIf<AptosCoin> { account: staker };
+        let balance = global<coin::CoinStore<AptosCoin>>(staker_address).coin.value;
+        let post post_coin = global<coin::CoinStore<AptosCoin>>(staker_address).coin.value;
+        ensures post_coin == balance - amount;
+
+        // postconditions stake::add_stake_with_cap()
+        let owner_cap = staking_contract.owner_cap;
+        include stake::AddStakeWithCapAbortsIfAndEnsures { owner_cap };
+
+        let post post_store = global<Store>(staker_address);
+        let post post_staking_contract = simple_map::spec_get(
+            post_store.staking_contracts, operator
+        );
+        aborts_if staking_contract.principal + amount > MAX_U64;
+
+        // property 3: Adding stake to the stake pool increases the principal value of the pool, reflecting the
+        // additional stake amount.
+        /// [high-level-req-3]
+        ensures post_staking_contract.principal == staking_contract.principal + amount;
+    }

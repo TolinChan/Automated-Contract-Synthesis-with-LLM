@@ -1,0 +1,9 @@
+    public fun create_staking_contract_with_coins(
+        staker: &signer,
+        operator: address,
+        voter: address,
+        coins: Coin<AptosCoin>,
+        commission_percentage: u64,
+        // Optional seed used when creating the staking contract account.
+        contract_creation_seed: vector<u8>
+    ): address acquires Store {

@@ -1,0 +1,16 @@
+{
+  "id": "staking_contract_request_commission",
+  "module": "aptos_framework::staking_contract",
+  "function": "request_commission",
+  "source_file": "staking_contract.move",
+  "spec_file": "staking_contract.spec.move",
+  "complexity": "l3_medium",
+  "source_line_range": [
+    607,
+    635
+  ],
+  "body_chars": 894,
+  "body_lines": 27,
+  "spec_chars": 482,
+  "module_context_chars": 16206
+}

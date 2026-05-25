@@ -1,0 +1,16 @@
+{
+  "id": "account_create_account_if_does_not_exist",
+  "module": "aptos_framework::account",
+  "function": "create_account_if_does_not_exist",
+  "source_file": "account/account.move",
+  "spec_file": "account/account.spec.move",
+  "complexity": "l2_simple",
+  "source_line_range": [
+    276,
+    284
+  ],
+  "body_chars": 347,
+  "body_lines": 9,
+  "spec_chars": 499,
+  "module_context_chars": 16706
+}

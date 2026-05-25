@@ -1,0 +1,16 @@
+{
+  "id": "version_initialize",
+  "module": "aptos_framework::version",
+  "function": "initialize",
+  "source_file": "configs/version.move",
+  "spec_file": "configs/version.spec.move",
+  "complexity": "l2_simple",
+  "source_line_range": [
+    27,
+    34
+  ],
+  "body_chars": 374,
+  "body_lines": 8,
+  "spec_chars": 621,
+  "module_context_chars": 1522
+}

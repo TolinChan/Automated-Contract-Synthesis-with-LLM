@@ -1,0 +1,10 @@
+
+        let creation_num = *creation_num_ref;
+        *creation_num_ref = creation_num + 1;
+        GUID {
+            id: ID {
+                creation_num,
+                addr,
+            }
+        }
+    

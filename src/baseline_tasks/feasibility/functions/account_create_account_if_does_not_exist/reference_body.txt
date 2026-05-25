@@ -1,0 +1,9 @@
+
+        if (!resource_exists_at(account_address)) {
+            assert!(
+                account_address != @vm_reserved && account_address != @aptos_framework && account_address != @aptos_token,
+                error::invalid_argument(ECANNOT_RESERVED_ADDRESS)
+            );
+            create_account_unchecked(account_address);
+        }
+    

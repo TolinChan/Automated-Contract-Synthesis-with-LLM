@@ -4,7 +4,7 @@
   "function": "extract",
   "source_file": "coin.move",
   "spec_file": "coin.spec.move",
-  "complexity": "medium",
+  "complexity": "l3_medium",
   "source_line_range": [
     939,
     949

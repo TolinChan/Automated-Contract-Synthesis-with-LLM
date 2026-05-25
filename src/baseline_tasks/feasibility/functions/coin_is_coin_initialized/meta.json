@@ -1,0 +1,16 @@
+{
+  "id": "coin_is_coin_initialized",
+  "module": "aptos_framework::coin",
+  "function": "is_coin_initialized",
+  "source_file": "coin.move",
+  "spec_file": "coin.spec.move",
+  "complexity": "l1_trivial",
+  "source_line_range": [
+    777,
+    779
+  ],
+  "body_chars": 66,
+  "body_lines": 3,
+  "spec_chars": 113,
+  "module_context_chars": 20381
+}

@@ -1,0 +1,16 @@
+{
+  "id": "coin_is_account_registered",
+  "module": "aptos_framework::coin",
+  "function": "is_account_registered",
+  "source_file": "coin.move",
+  "spec_file": "coin.spec.move",
+  "complexity": "l1_trivial",
+  "source_line_range": [
+    794,
+    800
+  ],
+  "body_chars": 153,
+  "body_lines": 7,
+  "spec_chars": 141,
+  "module_context_chars": 20357
+}

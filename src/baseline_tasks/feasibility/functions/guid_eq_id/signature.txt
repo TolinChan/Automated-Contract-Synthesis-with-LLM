@@ -1,0 +1,1 @@
+    public fun eq_id(guid: &GUID, id: &ID): bool {

@@ -4,7 +4,7 @@
   "function": "update_performance_statistics",
   "source_file": "stake.move",
   "spec_file": "stake.spec.move",
-  "complexity": "complex",
+  "complexity": "l4_complex",
   "source_line_range": [
     1277,
     1330

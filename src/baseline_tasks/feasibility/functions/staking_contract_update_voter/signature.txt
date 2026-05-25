@@ -1,0 +1,3 @@
+    public entry fun update_voter(
+        staker: &signer, operator: address, new_voter: address
+    ) acquires Store {

@@ -1,0 +1,14 @@
+    spec create_staking_contract(
+        staker: &signer,
+        operator: address,
+        voter: address,
+        amount: u64,
+        commission_percentage: u64,
+        contract_creation_seed: vector<u8>
+    ) {
+        pragma aborts_if_is_partial;
+        pragma verify_duration_estimate = 120;
+        include PreconditionsInCreateContract;
+        include WithdrawAbortsIf<AptosCoin> { account: staker };
+        include CreateStakingContractWithCoinsAbortsIfAndEnsures;
+    }

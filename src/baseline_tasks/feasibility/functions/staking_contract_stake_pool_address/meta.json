@@ -1,0 +1,16 @@
+{
+  "id": "staking_contract_stake_pool_address",
+  "module": "aptos_framework::staking_contract",
+  "function": "stake_pool_address",
+  "source_file": "staking_contract.move",
+  "spec_file": "staking_contract.spec.move",
+  "complexity": "l2_simple",
+  "source_line_range": [
+    273,
+    277
+  ],
+  "body_chars": 201,
+  "body_lines": 5,
+  "spec_chars": 297,
+  "module_context_chars": 16259
+}

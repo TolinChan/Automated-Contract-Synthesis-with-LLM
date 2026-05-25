@@ -1,0 +1,22 @@
+    spec create_staking_contract_with_coins(
+        staker: &signer,
+        operator: address,
+        voter: address,
+        coins: Coin<AptosCoin>,
+        commission_percentage: u64,
+        contract_creation_seed: vector<u8>
+    ): address {
+        pragma verify_duration_estimate = 120;
+        pragma aborts_if_is_partial;
+        include PreconditionsInCreateContract;
+
+        let amount = coins.value;
+        include CreateStakingContractWithCoinsAbortsIfAndEnsures { amount };
+
+        // TODO: this property causes timeout
+        // let staker_address = signer::address_of(staker);
+        // let seed_0 = bcs::to_bytes(staker_address);
+        // let seed_1 = concat(concat(concat(seed_0, bcs::to_bytes(operator)), SALT), contract_creation_seed);
+        // let resource_addr = account::spec_create_resource_address(staker_address, seed_1);
+        // ensures result == resource_addr;
+    }

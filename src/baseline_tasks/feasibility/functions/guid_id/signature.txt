@@ -1,0 +1,1 @@
+    public fun id(guid: &GUID): ID {

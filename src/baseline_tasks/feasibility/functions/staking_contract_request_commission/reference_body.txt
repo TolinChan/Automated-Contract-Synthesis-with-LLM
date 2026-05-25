@@ -1,0 +1,27 @@
+
+        let account_addr = signer::address_of(account);
+        assert!(
+            account_addr == staker
+                || account_addr == operator
+                || account_addr == beneficiary_for_operator(operator),
+            error::unauthenticated(ENOT_STAKER_OR_OPERATOR_OR_BENEFICIARY)
+        );
+        assert_staking_contract_exists(staker, operator);
+
+        let store = borrow_global_mut<Store>(staker);
+        let staking_contract = store.staking_contracts.borrow_mut(&operator);
+        // Short-circuit if zero commission.
+        if (staking_contract.commission_percentage == 0) { return };
+
+        // Force distribution of any already inactive stake.
+        distribute_internal(
+            staker,
+            operator,
+            staking_contract,
+        );
+
+        request_commission_internal(
+            operator,
+            staking_contract,
+        );
+    

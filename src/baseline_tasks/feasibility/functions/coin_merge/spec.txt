@@ -1,0 +1,5 @@
+
+    spec merge<CoinType>(dst_coin: &mut Coin<CoinType>, source_coin: Coin<CoinType>) {
+        /// [high-level-req-3]
+        ensures dst_coin.value == old(dst_coin.value) + source_coin.value;
+    }

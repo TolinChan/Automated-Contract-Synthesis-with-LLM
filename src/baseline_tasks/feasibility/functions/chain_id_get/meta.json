@@ -4,7 +4,7 @@
   "function": "get",
   "source_file": "chain_id.move",
   "spec_file": "chain_id.spec.move",
-  "complexity": "simple",
+  "complexity": "l1_trivial",
   "source_line_range": [
     22,
     24

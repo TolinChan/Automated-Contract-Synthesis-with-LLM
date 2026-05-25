@@ -1,0 +1,5 @@
+
+    spec creator_address(guid: &GUID): address {
+        /// [high-level-req-2.3]
+        aborts_if false;
+    }

@@ -1,0 +1,40 @@
+// === imports ===
+use std::error;
+use std::signer;
+use aptos_framework::chain_status;
+use aptos_framework::config_buffer;
+use aptos_framework::reconfiguration;
+use aptos_framework::system_addresses;
+
+// === friends ===
+friend aptos_framework::genesis;
+friend aptos_framework::reconfiguration_with_dkg;
+
+// === constants ===
+const EINVALID_MAJOR_VERSION_NUMBER: u64 = 1;
+const ENOT_AUTHORIZED: u64 = 2;
+
+// === structs ===
+struct Version has drop, key, store {
+        major: u64,
+    }
+struct SetVersionCapability has key {}
+
+// === sibling function signatures (bodies omitted) ===
+    public(friend) fun initialize(aptos_framework: &signer, initial_version: u64);
+    public entry fun set_for_next_epoch(account: &signer, major: u64) acquires Version;
+    public(friend) fun on_new_epoch(framework: &signer) acquires Version;
+    fun initialize_for_test(core_resources: &signer);
+    #[test(aptos_framework = @aptos_framework)]
+    public entry fun test_set_version(aptos_framework: signer) acquires Version;
+    #[test(aptos_framework = @aptos_framework, core_resources = @core_resources)]
+    public entry fun test_set_version_core_resources(
+        aptos_framework: signer,
+        core_resources: signer,
+    ) acquires Version;
+    #[test(aptos_framework = @aptos_framework, random_account = @0x123)]
+    #[expected_failure(abort_code = 327682, location = Self)]
+    public entry fun test_set_version_unauthorized_should_fail(
+        aptos_framework: signer,
+        random_account: signer,
+    ) acquires Version;

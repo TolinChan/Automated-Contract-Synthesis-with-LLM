@@ -4,7 +4,7 @@
   "function": "initialize",
   "source_file": "chain_id.move",
   "spec_file": "chain_id.spec.move",
-  "complexity": "simple_plus",
+  "complexity": "l2_simple",
   "source_line_range": [
     15,
     18

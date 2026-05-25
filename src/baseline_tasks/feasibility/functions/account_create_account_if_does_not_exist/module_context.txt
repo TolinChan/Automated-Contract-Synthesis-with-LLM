@@ -1,0 +1,344 @@
+// === imports ===
+use std::bcs;
+use std::error;
+use std::features;
+use std::hash;
+use std::option::{Self, Option};
+use std::signer;
+use std::vector;
+use aptos_framework::chain_id;
+use aptos_framework::create_signer::create_signer;
+use aptos_framework::event::{Self, EventHandle};
+use aptos_framework::guid;
+use aptos_framework::permissioned_signer;
+use aptos_framework::system_addresses;
+use aptos_std::ed25519;
+use aptos_std::from_bcs;
+use aptos_std::multi_ed25519;
+use aptos_std::single_key;
+use aptos_std::multi_key;
+use aptos_std::table::{Self, Table};
+use aptos_std::type_info::{Self, TypeInfo};
+
+// === friends ===
+friend aptos_framework::aptos_account;
+friend aptos_framework::coin;
+friend aptos_framework::genesis;
+friend aptos_framework::multisig_account;
+friend aptos_framework::resource_account;
+friend aptos_framework::transaction_validation;
+
+// === constants ===
+const MAX_U64: u128 = 18446744073709551615;
+const ZERO_AUTH_KEY: vector<u8> = x"0000000000000000000000000000000000000000000000000000000000000000";
+const ED25519_SCHEME: u8 = 0;
+const MULTI_ED25519_SCHEME: u8 = 1;
+const SINGLE_KEY_SCHEME: u8 = 2;
+const MULTI_KEY_SCHEME: u8 = 3;
+const DERIVE_RESOURCE_ACCOUNT_SCHEME: u8 = 255;
+const EACCOUNT_ALREADY_EXISTS: u64 = 1;
+const EACCOUNT_DOES_NOT_EXIST: u64 = 2;
+const ESEQUENCE_NUMBER_TOO_BIG: u64 = 3;
+const EMALFORMED_AUTHENTICATION_KEY: u64 = 4;
+const ECANNOT_RESERVED_ADDRESS: u64 = 5;
+const EOUT_OF_GAS: u64 = 6;
+const EWRONG_CURRENT_PUBLIC_KEY: u64 = 7;
+const EINVALID_PROOF_OF_KNOWLEDGE: u64 = 8;
+const ENO_CAPABILITY: u64 = 9;
+const EINVALID_ACCEPT_ROTATION_CAPABILITY: u64 = 10;
+const ENO_VALID_FRAMEWORK_RESERVED_ADDRESS: u64 = 11;
+const EINVALID_SCHEME: u64 = 12;
+const EINVALID_ORIGINATING_ADDRESS: u64 = 13;
+const ENO_SUCH_SIGNER_CAPABILITY: u64 = 14;
+const ERESOURCE_ACCCOUNT_EXISTS: u64 = 15;
+const EACCOUNT_ALREADY_USED: u64 = 16;
+const EOFFERER_ADDRESS_DOES_NOT_EXIST: u64 = 17;
+const ENO_SUCH_ROTATION_CAPABILITY_OFFER: u64 = 18;
+const ENO_SIGNER_CAPABILITY_OFFERED: u64 = 19;
+const EEXCEEDED_MAX_GUID_CREATION_NUM: u64 = 20;
+const ENEW_AUTH_KEY_ALREADY_MAPPED: u64 = 21;
+const ENEW_AUTH_KEY_SAME_AS_CURRENT: u64 = 22;
+const ENO_ACCOUNT_PERMISSION: u64 = 23;
+const EUNRECOGNIZED_SCHEME: u64 = 24;
+const ENOT_A_KEYLESS_PUBLIC_KEY: u64 = 25;
+const ENOT_THE_ORIGINAL_PUBLIC_KEY: u64 = 26;
+const ESET_ORIGINATING_ADDRESS_DISABLED: u64 = 27;
+const MAX_GUID_CREATION_NUM: u64 = 0x4000000000000;
+
+// === structs ===
+struct KeyRotation has drop, store {
+        account: address,
+        old_authentication_key: vector<u8>,
+        new_authentication_key: vector<u8>,
+    }
+struct KeyRotationToPublicKey has drop, store {
+        // The address of the account that is rotating its key
+        account: address,
+        // The bitmap of verified public keys.  This indicates which public keys have been verified by the account owner.
+        // The bitmap is 4 bytes long, thus representing 32 bits.  Each bit represents whether a public key has been verified.
+        // In the 32 bit representation, if a bit at index i (read left to right) is 1, then the public key at index i has
+        // been verified in the public key.
+        //
+        // For example: [0x10100000,0x00000000,0x00000000,0x00000000] marks the first and third public keys in the multi-key as verified.
+        //
+        // Note: In the case of a single key, only the first bit is used.
+        verified_public_key_bit_map: vector<u8>,
+        // The scheme of the public key.
+        public_key_scheme: u8,
+        // The byte representation of the public key.
+        public_key: vector<u8>,
+        // The old authentication key on the account
+        old_auth_key: vector<u8>,
+        // The new authentication key which is the hash of [public_key, public_key_scheme]
+        new_auth_key: vector<u8>,
+    }
+struct Account has key, store {
+        authentication_key: vector<u8>,
+        sequence_number: u64,
+        guid_creation_num: u64,
+        coin_register_events: EventHandle<CoinRegisterEvent>,
+        key_rotation_events: EventHandle<KeyRotationEvent>,
+        rotation_capability_offer: CapabilityOffer<RotationCapability>,
+        signer_capability_offer: CapabilityOffer<SignerCapability>,
+    }
+struct KeyRotationEvent has drop, store {
+        old_authentication_key: vector<u8>,
+        new_authentication_key: vector<u8>,
+    }
+struct CoinRegisterEvent has drop, store {
+        type_info: TypeInfo,
+    }
+struct CoinRegister has drop, store {
+        account: address,
+        type_info: TypeInfo,
+    }
+struct CapabilityOffer<phantom T> has store { for: Option<address> }
+struct RotationCapability has drop, store { account: address }
+struct SignerCapability has drop, store { account: address }
+struct OriginatingAddress has key {
+        address_map: Table<address, address>,
+    }
+struct RotationProofChallenge has copy, drop {
+        sequence_number: u64,
+        // the sequence number of the account whose key is being rotated
+        originator: address,
+        // the address of the account whose key is being rotated
+        current_auth_key: address,
+        // the current authentication key of the account whose key is being rotated
+        new_public_key: vector<u8>,
+        // the new public key that the account owner wants to rotate to
+    }
+struct RotationCapabilityOfferProofChallenge has drop {
+        sequence_number: u64,
+        recipient_address: address,
+    }
+struct SignerCapabilityOfferProofChallenge has drop {
+        sequence_number: u64,
+        recipient_address: address,
+    }
+struct RotationCapabilityOfferProofChallengeV2 has drop {
+        chain_id: u8,
+        sequence_number: u64,
+        source_address: address,
+        recipient_address: address,
+    }
+struct SignerCapabilityOfferProofChallengeV2 has copy, drop {
+        sequence_number: u64,
+        source_address: address,
+        recipient_address: address,
+    }
+struct DummyResource has key {}
+struct FakeCoin {}
+struct SadFakeCoin {}
+
+// === sibling function signatures (bodies omitted) ===
+    public fun create_signer_for_test(addr: address): signer;
+    public fun grant_key_rotation_permission(master: &signer, permissioned_signer: &signer);
+    public fun grant_key_offering_permission(master: &signer, permissioned_signer: &signer);
+    public(friend) fun initialize(aptos_framework: &signer);
+    public(friend) fun create_account(new_address: address): signer;
+    fun create_account_unchecked(new_address: address): signer;
+    public fun exists_at(addr: address): bool;
+    public fun get_guid_next_creation_num(addr: address): u64 acquires Account;
+    #[view]
+    public fun get_sequence_number(addr: address): u64 acquires Account;
+    #[view]
+    public fun originating_address(auth_key: address): Option<address> acquires OriginatingAddress;
+    public(friend) fun increment_sequence_number(addr: address) acquires Account;
+    #[view]
+    public fun get_authentication_key(addr: address): vector<u8> acquires Account;
+    public(friend) fun rotate_authentication_key_internal(account: &signer, new_auth_key: vector<u8>) acquires Account;
+    entry fun rotate_authentication_key_call(account: &signer, new_auth_key: vector<u8>) acquires Account;
+    entry fun rotate_authentication_key_from_public_key(account: &signer, scheme: u8, new_public_key_bytes: vector<u8>) acquires Account;
+    entry fun upsert_ed25519_backup_key_on_keyless_account(account: &signer, keyless_public_key: vector<u8>, backup_public_key: vector<u8>, backup_key_proof: vector<u8>) acquires Account;
+    public entry fun rotate_authentication_key(
+        account: &signer,
+        from_scheme: u8,
+        from_public_key_bytes: vector<u8>,
+        to_scheme: u8,
+        to_public_key_bytes: vector<u8>,
+        cap_rotate_key: vector<u8>,
+        cap_update_table: vector<u8>,
+    ) acquires Account, OriginatingAddress;
+    public entry fun rotate_authentication_key_with_rotation_capability(
+        delegate_signer: &signer,
+        rotation_cap_offerer_address: address,
+        new_scheme: u8,
+        new_public_key_bytes: vector<u8>,
+        cap_update_table: vector<u8>
+    ) acquires Account, OriginatingAddress;
+    public entry fun offer_rotation_capability(
+        account: &signer,
+        rotation_capability_sig_bytes: vector<u8>,
+        account_scheme: u8,
+        account_public_key_bytes: vector<u8>,
+        recipient_address: address,
+    ) acquires Account;
+    entry fun set_originating_address(_account: &signer) acquires Account, OriginatingAddress;
+    public fun is_rotation_capability_offered(account_addr: address): bool acquires Account;
+    public fun get_rotation_capability_offer_for(account_addr: address): address acquires Account;
+    public entry fun revoke_rotation_capability(account: &signer, to_be_revoked_address: address) acquires Account;
+    public entry fun revoke_any_rotation_capability(account: &signer) acquires Account;
+    public entry fun offer_signer_capability(
+        account: &signer,
+        signer_capability_sig_bytes: vector<u8>,
+        account_scheme: u8,
+        account_public_key_bytes: vector<u8>,
+        recipient_address: address
+    ) acquires Account;
+    public fun is_signer_capability_offered(account_addr: address): bool acquires Account;
+    public fun get_signer_capability_offer_for(account_addr: address): address acquires Account;
+    public entry fun revoke_signer_capability(account: &signer, to_be_revoked_address: address) acquires Account;
+    public entry fun revoke_any_signer_capability(account: &signer) acquires Account;
+    public fun create_authorized_signer(account: &signer, offerer_address: address): signer acquires Account;
+    fun assert_valid_rotation_proof_signature_and_get_auth_key(
+        scheme: u8,
+        public_key_bytes: vector<u8>,
+        signature: vector<u8>,
+        challenge: &RotationProofChallenge
+    ): vector<u8>;
+    fun update_auth_key_and_originating_address_table(
+        originating_addr: address,
+        account_resource: &mut Account,
+        new_auth_key_vector: vector<u8>,
+    ) acquires OriginatingAddress;
+    public fun create_resource_address(source: &address, seed: vector<u8>): address;
+    public fun create_resource_account(source: &signer, seed: vector<u8>): (signer, SignerCapability) acquires Account;
+    public(friend) fun create_framework_reserved_account(addr: address): (signer, SignerCapability);
+    public fun create_guid(account_signer: &signer): guid::GUID acquires Account;
+    public fun new_event_handle<T: drop + store>(account: &signer): EventHandle<T> acquires Account;
+    public(friend) fun register_coin<CoinType>(account_addr: address);
+    #[test_only]
+    public fun get_signer_capability_offer_proof_challenge_v2(
+        source_address: address,
+        recipient_address: address,
+    ): SignerCapabilityOfferProofChallengeV2 acquires Account;
+    public fun create_signer_with_capability(capability: &SignerCapability): signer;
+    public fun get_signer_capability_address(capability: &SignerCapability): address;
+    public fun verify_signed_message<T: drop>(
+        account: address,
+        account_scheme: u8,
+        account_public_key: vector<u8>,
+        signed_message_bytes: vector<u8>,
+        message: T,
+    ) acquires Account;
+    #[test_only]
+    public fun create_account_for_test(new_address: address): signer;
+    fun test_create_signer_for_test();
+    #[test(user = @0x1)]
+    public entry fun test_create_resource_account(user: signer) acquires Account;
+    #[test]
+    #[expected_failure(abort_code = 0x10007, location = Self)]
+    public entry fun test_cannot_control_resource_account_via_auth_key() acquires Account;
+    #[test(user = @0x1)]
+    public entry fun test_module_capability(user: signer) acquires Account;
+    #[test(user = @0x1)]
+    public entry fun test_resource_account_and_create_account(user: signer) acquires Account;
+    #[test(user = @0x1)]
+    #[expected_failure(abort_code = 0x8000f, location = Self)]
+    public entry fun test_duplice_create_resource_account(user: signer) acquires Account;
+    public fun increment_sequence_number_for_test(
+        addr: address,
+    ) acquires Account;
+    public fun set_sequence_number(
+        addr: address,
+        s: u64
+    ) acquires Account;
+    #[test_only]
+    public fun create_test_signer_cap(account: address): SignerCapability;
+    #[test_only]
+    public fun set_signer_capability_offer(offerer: address, receiver: address) acquires Account;
+    #[test_only]
+    public fun set_rotation_capability_offer(offerer: address, receiver: address) acquires Account;
+    public entry fun mock_sequence_numbers()
+    acquires Account;
+    #[test(alice = @0xa11ce)]
+    #[expected_failure(abort_code = 65537, location = aptos_framework::ed25519)]
+    public entry fun test_empty_public_key(alice: signer) acquires Account, OriginatingAddress;
+    #[test(alice = @0xa11ce)]
+    #[expected_failure(abort_code = 262151, location = Self)]
+    public entry fun test_empty_signature(alice: signer) acquires Account, OriginatingAddress;
+    #[test_only]
+    public fun create_account_from_ed25519_public_key(pk_bytes: vector<u8>): signer;
+    #[test(bob = @0x345)]
+    #[expected_failure(abort_code = 65544, location = Self)]
+    public entry fun test_invalid_offer_signer_capability(bob: signer) acquires Account;
+    #[test(bob = @0x345)]
+    public entry fun test_valid_check_signer_capability_and_create_authorized_signer(bob: signer) acquires Account;
+    #[test(bob = @0x345)]
+    public entry fun test_valid_check_signer_capability_and_create_authorized_signer_with_permission(bob: signer) acquires Account;
+    #[test(bob = @0x345)]
+    #[expected_failure(abort_code = 0x50017, location = Self)]
+    public entry fun test_valid_check_signer_capability_and_create_authorized_signer_with_no_permission(bob: signer) acquires Account;
+    #[test(bob = @0x345)]
+    #[expected_failure(abort_code = 0x50017, location = Self)]
+    public entry fun test_valid_check_signer_capability_and_create_authorized_signer_with_wrong_permission(bob: signer) acquires Account;
+    #[test(bob = @0x345)]
+    public entry fun test_get_signer_cap_and_is_signer_cap(bob: signer) acquires Account;
+    #[test(bob = @0x345, charlie = @0x567)]
+    #[expected_failure(abort_code = 393230, location = Self)]
+    public entry fun test_invalid_check_signer_capability_and_create_authorized_signer(
+        bob: signer,
+        charlie: signer
+    ) acquires Account;
+    #[test(bob = @0x345)]
+    public entry fun test_valid_revoke_signer_capability(bob: signer) acquires Account;
+    #[test(bob = @0x345, charlie = @0x567)]
+    #[expected_failure(abort_code = 393230, location = Self)]
+    public entry fun test_invalid_revoke_signer_capability(bob: signer, charlie: signer) acquires Account;
+    #[test(bob = @0x345, framework = @aptos_framework)]
+    public entry fun test_valid_offer_rotation_capability(bob: signer, framework: signer) acquires Account;
+    #[test(bob = @0x345, framework = @aptos_framework)]
+    #[expected_failure(abort_code = 65544, location = Self)]
+    public entry fun test_invalid_offer_rotation_capability(bob: signer, framework: signer) acquires Account;
+    #[test(bob = @0x345, framework = @aptos_framework)]
+    public entry fun test_valid_revoke_rotation_capability(bob: signer, framework: signer) acquires Account;
+    #[test(bob = @0x345, charlie = @0x567, framework = @aptos_framework)]
+    #[expected_failure(abort_code = 393234, location = Self)]
+    public entry fun test_invalid_revoke_rotation_capability(
+        bob: signer,
+        charlie: signer,
+        framework: signer
+    ) acquires Account;
+    #[test(account = @aptos_framework)]
+    public entry fun test_valid_rotate_authentication_key_multi_ed25519_to_multi_ed25519(
+        account: signer
+    ) acquires Account, OriginatingAddress;
+    #[test(account = @aptos_framework)]
+    public entry fun test_valid_rotate_authentication_key_multi_ed25519_to_ed25519(
+        account: signer
+    ) acquires Account, OriginatingAddress;
+    #[test(account = @aptos_framework)]
+    public entry fun test_add_ed25519_backup_key_to_keyless_account(
+        account: signer
+    ) acquires Account;
+    #[test(account = @aptos_framework)]
+    public entry fun test_simple_rotation(account: &signer) acquires Account;
+    #[test(account = @aptos_framework)]
+    #[expected_failure(abort_code = 0x20014, location = Self)]
+    public entry fun test_max_guid(account: &signer) acquires Account;
+    #[test(account = @0x1234)]
+    fun test_events(account: &signer);
+    #[test(account = @0x1234)]
+    #[expected_failure(abort_code = 0x3001b, location = Self)]
+    fun test_set_originating_address_fails(account: &signer) acquires Account, OriginatingAddress;

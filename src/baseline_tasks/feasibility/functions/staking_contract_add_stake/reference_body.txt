@@ -1,0 +1,15 @@
+
+        let staker_address = signer::address_of(staker);
+        assert_staking_contract_exists(staker_address, operator);
+
+        let store = borrow_global_mut<Store>(staker_address);
+        let staking_contract = store.staking_contracts.borrow_mut(&operator);
+
+        // Add the stake to the stake pool.
+        let staked_coins = coin::withdraw<AptosCoin>(staker, amount);
+        stake::add_stake_with_cap(&staking_contract.owner_cap, staked_coins);
+
+        staking_contract.principal += amount;
+        let pool_address = staking_contract.pool_address;
+        emit(AddStake { operator, pool_address, amount });
+    

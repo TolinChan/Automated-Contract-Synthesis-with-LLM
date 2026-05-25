@@ -1,0 +1,3 @@
+
+        exists<CoinInfo<CoinType>>(coin_address<CoinType>())
+    

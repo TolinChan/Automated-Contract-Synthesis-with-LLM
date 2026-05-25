@@ -1,0 +1,15 @@
+    spec update_voter(staker: &signer, operator: address, new_voter: address) {
+        let staker_address = signer::address_of(staker);
+        include UpdateVoterSchema { staker: staker_address };
+
+        let post store = global<Store>(staker_address);
+        let post staking_contract = simple_map::spec_get(
+            store.staking_contracts, operator
+        );
+        let post pool_address = staking_contract.owner_cap.pool_address;
+        let post new_delegated_voter = global<stake::StakePool>(pool_address).delegated_voter;
+        // property 4: The staker may update the voter of a staking contract, enabling them
+        // to modify the assigned voter address and ensure it accurately reflects their desired choice.
+        /// [high-level-req-4]
+        ensures new_delegated_voter == new_voter;
+    }

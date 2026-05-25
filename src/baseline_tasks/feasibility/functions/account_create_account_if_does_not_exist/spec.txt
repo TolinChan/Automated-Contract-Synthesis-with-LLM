@@ -1,0 +1,11 @@
+    spec create_account_if_does_not_exist(account_address: address) {
+        let authentication_key = bcs::to_bytes(account_address);
+        modifies global<Account>(account_address);
+        aborts_if !exists<Account>(account_address) && (
+            account_address == @vm_reserved
+            || account_address == @aptos_framework
+            || account_address == @aptos_token
+            || !(len(authentication_key) == 32)
+        );
+        ensures exists<Account>(account_address);
+    }

@@ -1,0 +1,9 @@
+
+        if (resource_exists_at(addr)) {
+            Account[addr].sequence_number
+        } else if (features::is_default_account_resource_enabled()) {
+            0
+        } else {
+            abort error::not_found(EACCOUNT_DOES_NOT_EXIST)
+        }
+    
