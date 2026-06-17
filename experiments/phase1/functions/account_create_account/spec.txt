@@ -1,0 +1,7 @@
+    spec create_account(new_address: address): signer {
+        include CreateAccountAbortsIf {addr: new_address};
+        aborts_if new_address == @vm_reserved || new_address == @aptos_framework || new_address == @aptos_token;
+        ensures signer::address_of(result) == new_address;
+        /// [high-level-req-2]
+        ensures exists<Account>(new_address);
+    }

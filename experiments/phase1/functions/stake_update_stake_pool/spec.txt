@@ -1,0 +1,56 @@
+
+    spec update_stake_pool {
+        // TODO: set because of timeout (property proved)
+        pragma verify_duration_estimate = 300;
+        include ResourceRequirement;
+        include GetReconfigStartTimeRequirement;
+        include staking_config::StakingRewardsConfigRequirement;
+
+        include UpdateStakePoolAbortsIf;
+
+        let stake_pool = global<StakePool>(pool_address);
+        let validator_config = global<ValidatorConfig>(pool_address);
+        let cur_validator_perf = validator_perf.validators[validator_config.validator_index];
+        let num_successful_proposals = cur_validator_perf.successful_proposals;
+        let num_total_proposals = cur_validator_perf.successful_proposals
+            + cur_validator_perf.failed_proposals;
+        let rewards_rate = spec_get_reward_rate_1(staking_config);
+        let rewards_rate_denominator = spec_get_reward_rate_2(staking_config);
+        let rewards_amount_1 = if (stake_pool.active.value > 0) {
+            spec_rewards_amount(
+                stake_pool.active.value,
+                num_successful_proposals,
+                num_total_proposals,
+                rewards_rate,
+                rewards_rate_denominator
+            )
+        } else { 0 };
+        let rewards_amount_2 = if (stake_pool.pending_inactive.value > 0) {
+            spec_rewards_amount(
+                stake_pool.pending_inactive.value,
+                num_successful_proposals,
+                num_total_proposals,
+                rewards_rate,
+                rewards_rate_denominator
+            )
+        } else { 0 };
+        let post post_stake_pool = global<StakePool>(pool_address);
+        let post post_active_value = post_stake_pool.active.value;
+        let post post_pending_inactive_value = post_stake_pool.pending_inactive.value;
+        let post post_inactive_value = post_stake_pool.inactive.value;
+        ensures post_stake_pool.pending_active.value == 0;
+        // the amount stored in the stake pool should not changed after the update
+        ensures post_active_value
+            == stake_pool.active.value + rewards_amount_1
+                + stake_pool.pending_active.value;
+        // when current lockup cycle has expired, pending inactive should be fully unlocked and moved into inactive
+        ensures if (spec_get_reconfig_start_time_secs() >= stake_pool.locked_until_secs) {
+            post_pending_inactive_value == 0
+                && post_inactive_value
+                    == stake_pool.inactive.value + stake_pool.pending_inactive.value
+                        + rewards_amount_2
+        } else {
+            post_pending_inactive_value
+                == stake_pool.pending_inactive.value + rewards_amount_2
+        };
+    }

@@ -1,0 +1,5 @@
+
+    spec unchecked_deposit {
+        modifies global<FungibleStore>(store_addr);
+        modifies global<ConcurrentFungibleBalance>(store_addr);
+    }

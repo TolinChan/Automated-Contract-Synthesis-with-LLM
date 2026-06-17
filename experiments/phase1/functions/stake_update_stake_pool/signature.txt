@@ -1,0 +1,5 @@
+    fun update_stake_pool(
+        validator_perf: &ValidatorPerformance,
+        pool_address: address,
+        staking_config: &StakingConfig
+    ) acquires AptosCoinCapabilities, PendingTransactionFee, StakePool, TransactionFeeConfig, ValidatorConfig {

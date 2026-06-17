@@ -1,0 +1,14 @@
+
+    spec append {
+        pragma opaque, verify = false;
+        aborts_if false;
+        ensures len(v1) == old(len(v1) + len(v2));
+        ensures len(v2) == 0;
+        // The prefix of the new `v1` is the same as the old `v1`.
+        ensures (forall i in 0..old(len(v1)): v1[i] == old(v1[i]));
+        // The suffix of the new `v1` is the same as the reverse of the old `v2`.
+        ensures (
+            forall i in old(len(v1))..len(v1):
+                v1[i] == old(v2[len(v2) - (i - len(v1)) - 1])
+        );
+    }

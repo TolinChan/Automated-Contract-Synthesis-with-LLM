@@ -1,0 +1,1 @@
+    public fun get_sequence_number(addr: address): u64 acquires Account {

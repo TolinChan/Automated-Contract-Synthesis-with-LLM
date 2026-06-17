@@ -1,0 +1,16 @@
+{
+  "id": "version_set_version",
+  "module": "aptos_framework::version",
+  "function": "set_version",
+  "source_file": "configs/version.move",
+  "spec_file": "configs/version.spec.move",
+  "complexity": "l3_medium",
+  "source_line_range": [
+    41,
+    53
+  ],
+  "body_chars": 563,
+  "body_lines": 13,
+  "spec_chars": 1073,
+  "module_context_chars": 1524
+}

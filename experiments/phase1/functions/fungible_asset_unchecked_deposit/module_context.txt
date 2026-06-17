@@ -1,0 +1,475 @@
+// === imports ===
+use aptos_framework::aggregator_v2::{Self, Aggregator};
+use aptos_framework::create_signer;
+use aptos_framework::event;
+use aptos_framework::function_info::{Self, FunctionInfo};
+use aptos_framework::object::{Self, Object, ConstructorRef, DeleteRef, ExtendRef};
+use aptos_framework::permissioned_signer;
+use std::string;
+use std::features;
+use std::error;
+use std::option::{Self, Option};
+use std::signer;
+use std::string::String;
+use aptos_framework::account;
+use aptos_framework::timestamp;
+
+// === friends ===
+friend aptos_framework::coin;
+friend aptos_framework::primary_fungible_store;
+friend aptos_framework::aptos_account;
+friend aptos_framework::dispatchable_fungible_asset;
+
+// === constants ===
+const EAMOUNT_CANNOT_BE_ZERO: u64 = 1;
+const ETRANSFER_REF_AND_FUNGIBLE_ASSET_MISMATCH: u64 = 2;
+const ESTORE_IS_FROZEN: u64 = 3;
+const EINSUFFICIENT_BALANCE: u64 = 4;
+const EMAX_SUPPLY_EXCEEDED: u64 = 5;
+const EFUNGIBLE_ASSET_MISMATCH: u64 = 6;
+const EMINT_REF_AND_STORE_MISMATCH: u64 = 7;
+const ENOT_STORE_OWNER: u64 = 8;
+const ETRANSFER_REF_AND_STORE_MISMATCH: u64 = 9;
+const EBURN_REF_AND_STORE_MISMATCH: u64 = 10;
+const EFUNGIBLE_ASSET_AND_STORE_MISMATCH: u64 = 11;
+const EAMOUNT_IS_NOT_ZERO: u64 = 12;
+const EBURN_REF_AND_FUNGIBLE_ASSET_MISMATCH: u64 = 13;
+const EBALANCE_IS_NOT_ZERO: u64 = 14;
+const ENAME_TOO_LONG: u64 = 15;
+const ESYMBOL_TOO_LONG: u64 = 16;
+const EDECIMALS_TOO_LARGE: u64 = 17;
+const EOBJECT_IS_DELETABLE: u64 = 18;
+const EURI_TOO_LONG: u64 = 19;
+const ESUPPLY_UNDERFLOW: u64 = 20;
+const ESUPPLY_NOT_FOUND: u64 = 21;
+const ECONCURRENT_SUPPLY_NOT_ENABLED: u64 = 22;
+const EFUNGIBLE_STORE_EXISTENCE: u64 = 23;
+const ENOT_METADATA_OWNER: u64 = 24;
+const EWITHDRAW_FUNCTION_SIGNATURE_MISMATCH: u64 = 25;
+const EDEPOSIT_FUNCTION_SIGNATURE_MISMATCH: u64 = 26;
+const EDERIVED_BALANCE_FUNCTION_SIGNATURE_MISMATCH: u64 = 27;
+const EINVALID_DISPATCHABLE_OPERATIONS: u64 = 28;
+const EALREADY_REGISTERED: u64 = 29;
+const EFUNGIBLE_METADATA_EXISTENCE: u64 = 30;
+const EAPT_NOT_DISPATCHABLE: u64 = 31;
+const ECONCURRENT_BALANCE_NOT_ENABLED: u64 = 32;
+const EDERIVED_SUPPLY_FUNCTION_SIGNATURE_MISMATCH: u64 = 33;
+const ERAW_BALANCE_REF_AND_FUNGIBLE_ASSET_MISMATCH: u64 = 34;
+const ERAW_SUPPLY_REF_AND_FUNGIBLE_ASSET_MISMATCH: u64 = 35;
+const EWITHDRAW_PERMISSION_DENIED: u64 = 36;
+const MAX_NAME_LENGTH: u64 = 32;
+const MAX_SYMBOL_LENGTH: u64 = 32;
+const MAX_DECIMALS: u8 = 32;
+const MAX_URI_LENGTH: u64 = 512;
+const MAX_U128: u128 = 340282366920938463463374607431768211455;
+
+// === structs ===
+struct Supply has key {
+        current: u128,
+        // option::none() means unlimited supply.
+        maximum: Option<u128>
+    }
+struct ConcurrentSupply has key {
+        current: Aggregator<u128>
+    }
+struct Metadata has key, copy, drop {
+        /// Name of the fungible metadata, i.e., "USDT".
+        name: String,
+        /// Symbol of the fungible metadata, usually a shorter version of the name.
+        /// For example, Singapore Dollar is SGD.
+        symbol: String,
+        /// Number of decimals used for display purposes.
+        /// For example, if `decimals` equals `2`, a balance of `505` coins should
+        /// be displayed to a user as `5.05` (`505 / 10 ** 2`).
+        decimals: u8,
+        /// The Uniform Resource Identifier (uri) pointing to an image that can be used as the icon for this fungible
+        /// asset.
+        icon_uri: String,
+        /// The Uniform Resource Identifier (uri) pointing to the website for the fungible asset.
+        project_uri: String
+    }
+struct Untransferable has key {}
+struct FungibleStore has key {
+        /// The address of the base metadata object.
+        metadata: Object<Metadata>,
+        /// The balance of the fungible metadata.
+        balance: u64,
+        /// If true, owner transfer is disabled that only `TransferRef` can move in/out from this store.
+        frozen: bool
+    }
+struct DispatchFunctionStore has key {
+        withdraw_function: Option<FunctionInfo>,
+        deposit_function: Option<FunctionInfo>,
+        derived_balance_function: Option<FunctionInfo>
+    }
+struct DeriveSupply has key {
+        dispatch_function: Option<FunctionInfo>
+    }
+struct ConcurrentFungibleBalance has key {
+        /// The balance of the fungible metadata.
+        balance: Aggregator<u64>
+    }
+struct FungibleAsset {
+        metadata: Object<Metadata>,
+        amount: u64
+    }
+struct MintRef has drop, store {
+        metadata: Object<Metadata>
+    }
+struct TransferRef has drop, store {
+        metadata: Object<Metadata>
+    }
+struct RawBalanceRef has drop, store {
+        metadata: Object<Metadata>
+    }
+struct RawSupplyRef has drop, store {
+        metadata: Object<Metadata>
+    }
+struct BurnRef has drop, store {
+        metadata: Object<Metadata>
+    }
+struct MutateMetadataRef has drop, store {
+        metadata: Object<Metadata>
+    }
+struct Creation has drop, store {
+        metadata: address,
+        name: String,
+        symbol: String,
+        decimals: u8,
+        icon_uri: String,
+        project_uri: String,
+        maximum_supply: Option<u128>
+    }
+struct Deposit has drop, store {
+        store: address,
+        amount: u64
+    }
+struct Withdraw has drop, store {
+        store: address,
+        amount: u64
+    }
+struct Frozen has drop, store {
+        store: address,
+        frozen: bool
+    }
+struct FungibleStoreDeletion has drop, store {
+        store: address,
+        owner: address,
+        metadata: address
+    }
+struct TestToken has key {}
+struct FungibleAssetEvents has key {
+        deposit_events: event::EventHandle<DepositEvent>,
+        withdraw_events: event::EventHandle<WithdrawEvent>,
+        frozen_events: event::EventHandle<FrozenEvent>
+    }
+struct DepositEvent has drop, store {
+        amount: u64
+    }
+struct WithdrawEvent has drop, store {
+        amount: u64
+    }
+struct FrozenEvent has drop, store {
+        frozen: bool
+    }
+
+// === sibling function signatures (bodies omitted) ===
+    public fun add_fungibility(
+        constructor_ref: &ConstructorRef,
+        maximum_supply: Option<u128>,
+        name: String,
+        symbol: String,
+        decimals: u8,
+        icon_uri: String,
+        project_uri: String
+    ): Object<Metadata>;
+    public fun set_untransferable(constructor_ref: &ConstructorRef);
+    public fun is_untransferable<T: key>(metadata: Object<T>): bool;
+    public(friend) fun register_dispatch_functions(
+        constructor_ref: &ConstructorRef,
+        withdraw_function: Option<FunctionInfo>,
+        deposit_function: Option<FunctionInfo>,
+        derived_balance_function: Option<FunctionInfo>
+    );
+    public(friend) fun register_derive_supply_dispatch_function(
+        constructor_ref: &ConstructorRef, dispatch_function: Option<FunctionInfo>
+    );
+    public fun generate_mint_ref(constructor_ref: &ConstructorRef): MintRef;
+    public fun generate_burn_ref(constructor_ref: &ConstructorRef): BurnRef;
+    public(friend) fun generate_burn_copy_ref(self: &BurnRef): BurnRef;
+    public fun generate_transfer_ref(constructor_ref: &ConstructorRef): TransferRef;
+    public fun generate_raw_balance_ref(constructor_ref: &ConstructorRef): RawBalanceRef;
+    public fun generate_raw_supply_ref(constructor_ref: &ConstructorRef): RawSupplyRef;
+    public fun generate_mutate_metadata_ref(
+        constructor_ref: &ConstructorRef
+    ): MutateMetadataRef;
+    public fun supply<T: key>(metadata: Object<T>): Option<u128> acquires Supply, ConcurrentSupply;
+    fun supply_impl<T: key>(metadata: Object<T>): Option<u128> acquires Supply, ConcurrentSupply;
+    public fun maximum<T: key>(metadata: Object<T>): Option<u128> acquires Supply, ConcurrentSupply;
+    public fun name<T: key>(metadata: Object<T>): String acquires Metadata;
+    public fun symbol<T: key>(metadata: Object<T>): String acquires Metadata;
+    public fun decimals<T: key>(metadata: Object<T>): u8 acquires Metadata;
+    public fun icon_uri<T: key>(metadata: Object<T>): String acquires Metadata;
+    public fun project_uri<T: key>(metadata: Object<T>): String acquires Metadata;
+    public fun metadata<T: key>(metadata: Object<T>): Metadata acquires Metadata;
+    public fun store_exists(store: address): bool;
+    public fun store_metadata<T: key>(store: Object<T>): Object<Metadata> acquires FungibleStore;
+    public fun balance<T: key>(
+        store: Object<T>
+    ): u64 acquires FungibleStore, ConcurrentFungibleBalance, DispatchFunctionStore;
+    fun balance_impl<T: key>(store: Object<T>): u64 acquires FungibleStore, ConcurrentFungibleBalance;
+    public fun is_balance_at_least<T: key>(
+        store: Object<T>, amount: u64
+    ): bool acquires FungibleStore, ConcurrentFungibleBalance;
+    public(friend) fun is_address_balance_at_least(
+        store_addr: address, amount: u64
+    ): bool acquires FungibleStore, ConcurrentFungibleBalance;
+    public fun is_frozen<T: key>(store: Object<T>): bool acquires FungibleStore;
+    public fun is_store_dispatchable<T: key>(store: Object<T>): bool acquires FungibleStore;
+    #[view]
+    public fun is_asset_type_dispatchable(metadata: Object<Metadata>): bool;
+    public fun deposit_dispatch_function<T: key>(
+        store: Object<T>
+    ): Option<FunctionInfo> acquires FungibleStore, DispatchFunctionStore;
+    fun has_deposit_dispatch_function(
+        metadata: Object<Metadata>
+    ): bool acquires DispatchFunctionStore;
+    public fun withdraw_dispatch_function<T: key>(
+        store: Object<T>
+    ): Option<FunctionInfo> acquires FungibleStore, DispatchFunctionStore;
+    fun has_withdraw_dispatch_function(
+        metadata: Object<Metadata>
+    ): bool acquires DispatchFunctionStore;
+    fun has_balance_dispatch_function(
+        metadata: Object<Metadata>
+    ): bool acquires DispatchFunctionStore;
+    fun has_supply_dispatch_function(metadata_addr: address): bool;
+    public(friend) fun derived_balance_dispatch_function<T: key>(
+        store: Object<T>
+    ): Option<FunctionInfo> acquires FungibleStore, DispatchFunctionStore;
+    public(friend) fun derived_supply_dispatch_function<T: key>(
+        metadata: Object<T>
+    ): Option<FunctionInfo> acquires DeriveSupply;
+    public fun amount(self: &FungibleAsset): u64;
+    public fun metadata_from_asset(self: &FungibleAsset): Object<Metadata>;
+    public fun asset_metadata(self: &FungibleAsset): Object<Metadata>;
+    public fun mint_ref_metadata(self: &MintRef): Object<Metadata>;
+    public fun transfer_ref_metadata(self: &TransferRef): Object<Metadata>;
+    public fun burn_ref_metadata(self: &BurnRef): Object<Metadata>;
+    public fun object_from_metadata_ref(self: &MutateMetadataRef): Object<Metadata>;
+    public entry fun transfer<T: key>(
+        sender: &signer,
+        from: Object<T>,
+        to: Object<T>,
+        amount: u64
+    ) acquires FungibleStore, DispatchFunctionStore, ConcurrentFungibleBalance;
+    public fun create_store<T: key>(
+        constructor_ref: &ConstructorRef, metadata: Object<T>
+    ): Object<FungibleStore>;
+    public fun remove_store(
+        delete_ref: &DeleteRef
+    ) acquires FungibleStore, FungibleAssetEvents, ConcurrentFungibleBalance;
+    public fun withdraw<T: key>(
+        owner: &signer, store: Object<T>, amount: u64
+    ): FungibleAsset acquires FungibleStore, DispatchFunctionStore, ConcurrentFungibleBalance;
+    public(friend) fun withdraw_permission_check<T: key>(
+        owner: &signer, store: Object<T>, amount: u64
+    );
+    public(friend) fun withdraw_permission_check_by_address(
+        owner: &signer, store_address: address, amount: u64
+    );
+    public(friend) fun withdraw_sanity_check<T: key>(
+        owner: &signer, store: Object<T>, abort_on_dispatch: bool
+    ) acquires FungibleStore, DispatchFunctionStore;
+    public fun deposit_sanity_check<T: key>(
+        store: Object<T>, abort_on_dispatch: bool
+    ) acquires FungibleStore, DispatchFunctionStore;
+    public fun deposit<T: key>(
+        store: Object<T>, fa: FungibleAsset
+    ) acquires FungibleStore, DispatchFunctionStore, ConcurrentFungibleBalance;
+    public fun mint(self: &MintRef, amount: u64): FungibleAsset acquires Supply, ConcurrentSupply;
+    public(friend) fun mint_internal(
+        metadata: Object<Metadata>, amount: u64
+    ): FungibleAsset acquires Supply, ConcurrentSupply;
+    public fun mint_to<T: key>(
+        self: &MintRef, store: Object<T>, amount: u64
+    ) acquires FungibleStore, Supply, ConcurrentSupply, DispatchFunctionStore, ConcurrentFungibleBalance;
+    public fun set_frozen_flag<T: key>(
+        self: &TransferRef, store: Object<T>, frozen: bool
+    ) acquires FungibleStore;
+    public(friend) fun set_frozen_flag_internal<T: key>(
+        store: Object<T>, frozen: bool
+    ) acquires FungibleStore;
+    public fun burn(self: &BurnRef, fa: FungibleAsset) acquires Supply, ConcurrentSupply;
+    public(friend) fun burn_internal(self: FungibleAsset): u64 acquires Supply, ConcurrentSupply;
+    public fun burn_from<T: key>(
+        self: &BurnRef, store: Object<T>, amount: u64
+    ) acquires FungibleStore, Supply, ConcurrentSupply, ConcurrentFungibleBalance;
+    public(friend) fun address_burn_from_for_gas(
+        self: &BurnRef, store_addr: address, amount: u64
+    ) acquires FungibleStore, Supply, ConcurrentSupply, ConcurrentFungibleBalance;
+    public fun withdraw_with_ref<T: key>(
+        self: &TransferRef, store: Object<T>, amount: u64
+    ): FungibleAsset acquires FungibleStore, ConcurrentFungibleBalance;
+    public fun deposit_with_ref<T: key>(
+        self: &TransferRef, store: Object<T>, fa: FungibleAsset
+    ) acquires FungibleStore, ConcurrentFungibleBalance;
+    public fun transfer_with_ref<T: key>(
+        self: &TransferRef,
+        from: Object<T>,
+        to: Object<T>,
+        amount: u64
+    ) acquires FungibleStore, ConcurrentFungibleBalance;
+    public fun balance_with_ref<T: key>(
+        self: &RawBalanceRef, store: Object<T>
+    ): u64 acquires FungibleStore, ConcurrentFungibleBalance;
+    public fun supply_with_ref<T: key>(
+        self: &RawSupplyRef, metadata: Object<T>
+    ): Option<u128> acquires Supply, ConcurrentSupply;
+    public fun mutate_metadata(
+        self: &MutateMetadataRef,
+        name: Option<String>,
+        symbol: Option<String>,
+        decimals: Option<u8>,
+        icon_uri: Option<String>,
+        project_uri: Option<String>
+    ) acquires Metadata;
+    public fun zero<T: key>(metadata: Object<T>): FungibleAsset;
+    public fun extract(self: &mut FungibleAsset, amount: u64): FungibleAsset;
+    public fun merge(
+        self: &mut FungibleAsset, src_fungible_asset: FungibleAsset
+    );
+    public fun destroy_zero(self: FungibleAsset);
+    public(friend) fun unchecked_deposit_with_no_events(
+        store_addr: address, fa: FungibleAsset
+    ) acquires FungibleStore, ConcurrentFungibleBalance;
+    public(friend) fun unchecked_withdraw(
+        store_addr: address, amount: u64
+    ): FungibleAsset acquires FungibleStore, ConcurrentFungibleBalance;
+    fun increase_supply<T: key>(metadata: &Object<T>, amount: u64) acquires Supply, ConcurrentSupply;
+    fun decrease_supply<T: key>(metadata: &Object<T>, amount: u64) acquires Supply, ConcurrentSupply;
+    public fun upgrade_to_concurrent(ref: &ExtendRef) acquires Supply;
+    public entry fun upgrade_store_to_concurrent<T: key>(
+        owner: &signer, store: Object<T>
+    ) acquires FungibleStore;
+    fun ensure_store_upgraded_to_concurrent_internal(
+        fungible_store_address: address
+    ) acquires FungibleStore;
+    public fun grant_permission_by_store<T: key>(
+        master: &signer,
+        permissioned: &signer,
+        store: Object<T>,
+        amount: u64
+    );
+    public(friend) fun grant_permission_by_address(
+        master: &signer,
+        permissioned: &signer,
+        store_address: address,
+        amount: u64
+    );
+    public(friend) fun refill_permission(
+        permissioned: &signer, amount: u64, store_address: address
+    );
+    public fun revoke_permission(
+        _permissioned: &signer, _token_type: Object<Metadata>
+    );
+    #[test_only]
+    public fun create_test_token(creator: &signer): (ConstructorRef, Object<TestToken>);
+    #[test_only]
+    public fun init_test_metadata(
+        constructor_ref: &ConstructorRef
+    ): (MintRef, TransferRef, BurnRef, MutateMetadataRef);
+    #[test_only]
+    public fun create_fungible_asset(
+        creator: &signer
+    ): (MintRef, TransferRef, BurnRef, MutateMetadataRef, Object<Metadata>);
+    #[test_only]
+    public fun create_test_store<T: key>(
+        owner: &signer, metadata: Object<T>
+    ): Object<FungibleStore>;
+    #[test(creator = @0xcafe)]
+    fun test_metadata_basic_flow(creator: &signer) acquires Metadata, Supply, ConcurrentSupply;
+    #[test(creator = @0xcafe)]
+    #[expected_failure(abort_code = 0x20005, location = Self)]
+    fun test_supply_overflow(creator: &signer) acquires Supply, ConcurrentSupply;
+    #[test(creator = @0xcafe)]
+    fun test_create_and_remove_store(
+        creator: &signer
+    ) acquires FungibleStore, FungibleAssetEvents, ConcurrentFungibleBalance;
+    #[test(creator = @0xcafe, aaron = @0xface)]
+    fun test_e2e_basic_flow(
+        creator: &signer, aaron: &signer
+    ) acquires FungibleStore, Supply, ConcurrentSupply, DispatchFunctionStore, ConcurrentFungibleBalance, Metadata;
+    #[test(creator = @0xcafe)]
+    #[expected_failure(abort_code = 0x50003, location = Self)]
+    fun test_frozen(
+        creator: &signer
+    ) acquires FungibleStore, Supply, ConcurrentSupply, DispatchFunctionStore, ConcurrentFungibleBalance;
+    #[test(creator = @0xcafe)]
+    #[expected_failure(abort_code = 0x50003, location = Self)]
+    fun test_mint_to_frozen(
+        creator: &signer
+    ) acquires FungibleStore, ConcurrentFungibleBalance, Supply, ConcurrentSupply, DispatchFunctionStore;
+    #[test(creator = @0xcafe)]
+    #[expected_failure(abort_code = 0x50003, location = aptos_framework::object)]
+    fun test_untransferable(creator: &signer);
+    #[test(creator = @0xcafe, aaron = @0xface)]
+    fun test_transfer_with_ref(
+        creator: &signer, aaron: &signer
+    ) acquires FungibleStore, Supply, ConcurrentSupply, ConcurrentFungibleBalance, DispatchFunctionStore;
+    #[test(creator = @0xcafe)]
+    fun test_mutate_metadata(creator: &signer) acquires Metadata;
+    #[test(creator = @0xcafe)]
+    fun test_partial_mutate_metadata(creator: &signer) acquires Metadata;
+    #[test(creator = @0xcafe)]
+    #[expected_failure(abort_code = 0x2000f, location = Self)]
+    fun test_mutate_metadata_name_over_maximum_length(creator: &signer) acquires Metadata;
+    #[test(creator = @0xcafe)]
+    #[expected_failure(abort_code = 0x20010, location = Self)]
+    fun test_mutate_metadata_symbol_over_maximum_length(
+        creator: &signer
+    ) acquires Metadata;
+    #[test(creator = @0xcafe)]
+    #[expected_failure(abort_code = 0x20011, location = Self)]
+    fun test_mutate_metadata_decimals_over_maximum_amount(
+        creator: &signer
+    ) acquires Metadata;
+    #[test_only]
+    fun create_exceedingly_long_uri(): vector<u8>;
+    #[test(creator = @0xcafe)]
+    #[expected_failure(abort_code = 0x20013, location = Self)]
+    fun test_mutate_metadata_icon_uri_over_maximum_length(
+        creator: &signer
+    ) acquires Metadata;
+    #[test(creator = @0xcafe)]
+    #[expected_failure(abort_code = 0x20013, location = Self)]
+    fun test_mutate_metadata_project_uri_over_maximum_length(
+        creator: &signer
+    ) acquires Metadata;
+    #[test(creator = @0xcafe)]
+    fun test_merge_and_exact(creator: &signer) acquires Supply, ConcurrentSupply;
+    #[test(creator = @0xcafe)]
+    #[expected_failure(abort_code = 0x10012, location = Self)]
+    fun test_add_fungibility_to_deletable_object(creator: &signer);
+    #[test(creator = @0xcafe, aaron = @0xface)]
+    #[expected_failure(abort_code = 0x10006, location = Self)]
+    fun test_fungible_asset_mismatch_when_merge(
+        creator: &signer, aaron: &signer
+    );
+    #[test(fx = @aptos_framework, creator = @0xcafe)]
+    fun test_fungible_asset_upgrade(
+        fx: &signer, creator: &signer
+    ) acquires Supply, ConcurrentSupply, FungibleStore, ConcurrentFungibleBalance;
+    #[test(fx = @aptos_framework, creator = @0xcafe)]
+    fun test_fungible_asset_default_concurrent(
+        fx: &signer, creator: &signer
+    ) acquires Supply, ConcurrentSupply, FungibleStore, ConcurrentFungibleBalance;
+    #[test(creator = @0xcafe, aaron = @0xface)]
+    fun test_e2e_withdraw_limit(
+        creator: &signer, aaron: &signer
+    ) acquires FungibleStore, Supply, ConcurrentSupply, DispatchFunctionStore, ConcurrentFungibleBalance;
+    #[test(creator = @0xcafe, aaron = @0xface)]
+    #[expected_failure(abort_code = 0x50024, location = Self)]
+    fun test_e2e_withdraw_limit_exceeds(
+        creator: &signer, aaron: &signer
+    ) acquires FungibleStore, Supply, ConcurrentSupply, DispatchFunctionStore, ConcurrentFungibleBalance;

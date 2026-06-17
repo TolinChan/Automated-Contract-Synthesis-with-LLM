@@ -1,0 +1,16 @@
+{
+  "id": "chain_id_get",
+  "module": "aptos_framework::chain_id",
+  "function": "get",
+  "source_file": "chain_id.move",
+  "spec_file": "chain_id.spec.move",
+  "complexity": "l1_trivial",
+  "source_line_range": [
+    22,
+    24
+  ],
+  "body_chars": 57,
+  "body_lines": 3,
+  "spec_chars": 106,
+  "module_context_chars": 504
+}

@@ -1,0 +1,16 @@
+{
+  "id": "stake_append",
+  "module": "aptos_framework::stake",
+  "function": "append",
+  "source_file": "stake.move",
+  "spec_file": "stake.spec.move",
+  "complexity": "l4_complex",
+  "source_line_range": [
+    1972,
+    1976
+  ],
+  "body_chars": 89,
+  "body_lines": 5,
+  "spec_chars": 524,
+  "module_context_chars": 39853
+}

@@ -1,0 +1,16 @@
+{
+  "id": "guid_creator_address",
+  "module": "aptos_framework::guid",
+  "function": "creator_address",
+  "source_file": "guid.move",
+  "spec_file": "guid.spec.move",
+  "complexity": "l1_trivial",
+  "source_line_range": [
+    45,
+    47
+  ],
+  "body_chars": 26,
+  "body_lines": 3,
+  "spec_chars": 113,
+  "module_context_chars": 867
+}

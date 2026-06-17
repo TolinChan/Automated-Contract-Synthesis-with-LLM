@@ -1,0 +1,16 @@
+{
+  "id": "staking_contract_add_stake",
+  "module": "aptos_framework::staking_contract",
+  "function": "add_stake",
+  "source_file": "staking_contract.move",
+  "spec_file": "staking_contract.spec.move",
+  "complexity": "l4_complex",
+  "source_line_range": [
+    515,
+    531
+  ],
+  "body_chars": 626,
+  "body_lines": 15,
+  "spec_chars": 1606,
+  "module_context_chars": 16244
+}

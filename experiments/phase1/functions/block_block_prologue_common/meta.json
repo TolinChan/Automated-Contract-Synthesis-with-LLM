@@ -1,0 +1,16 @@
+{
+  "id": "block_block_prologue_common",
+  "module": "aptos_framework::block",
+  "function": "block_prologue_common",
+  "source_file": "block.move",
+  "spec_file": "block.spec.move",
+  "complexity": "l4_complex",
+  "source_line_range": [
+    153,
+    200
+  ],
+  "body_chars": 1541,
+  "body_lines": 39,
+  "spec_chars": 196,
+  "module_context_chars": 4931
+}

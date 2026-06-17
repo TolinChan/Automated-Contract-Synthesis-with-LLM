@@ -1,0 +1,60 @@
+// === imports ===
+use std::error;
+use std::signer;
+use aptos_framework::account;
+use aptos_framework::event;
+use aptos_framework::stake;
+use aptos_framework::system_addresses;
+use aptos_framework::timestamp;
+use aptos_framework::chain_status;
+use aptos_framework::reconfiguration_state;
+use aptos_framework::storage_gas;
+
+// === friends ===
+friend aptos_framework::aptos_governance;
+friend aptos_framework::block;
+friend aptos_framework::consensus_config;
+friend aptos_framework::execution_config;
+friend aptos_framework::gas_schedule;
+friend aptos_framework::genesis;
+friend aptos_framework::version;
+friend aptos_framework::reconfiguration_with_dkg;
+
+// === constants ===
+const ECONFIGURATION: u64 = 1;
+const ECONFIG: u64 = 2;
+const EMODIFY_CAPABILITY: u64 = 3;
+const EINVALID_BLOCK_TIME: u64 = 4;
+const EINVALID_GUID_FOR_EVENT: u64 = 5;
+
+// === structs ===
+struct NewEpochEvent has drop, store {
+        epoch: u64
+    }
+struct NewEpoch has drop, store {
+        epoch: u64
+    }
+struct Configuration has key {
+        /// Epoch number
+        epoch: u64,
+        /// Time of last reconfiguration. Only changes on reconfiguration events.
+        last_reconfiguration_time: u64,
+        /// Event handle for reconfiguration events
+        events: event::EventHandle<NewEpochEvent>
+    }
+struct DisableReconfiguration has key {}
+
+// === sibling function signatures (bodies omitted) ===
+    public(friend) fun initialize(aptos_framework: &signer);
+    fun disable_reconfiguration(aptos_framework: &signer);
+    fun enable_reconfiguration(aptos_framework: &signer) acquires DisableReconfiguration;
+    fun reconfiguration_enabled(): bool;
+    public fun last_reconfiguration_time(): u64 acquires Configuration;
+    public fun current_epoch(): u64 acquires Configuration;
+    fun emit_genesis_reconfiguration_event() acquires Configuration;
+    #[test_only]
+    public fun initialize_for_test(account: &signer);
+    #[test_only]
+    public fun reconfigure_for_test() acquires Configuration;
+    #[test_only]
+    public fun reconfigure_for_test_custom() acquires Configuration;

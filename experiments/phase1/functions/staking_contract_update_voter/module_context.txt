@@ -1,0 +1,436 @@
+// === imports ===
+use std::bcs;
+use std::error;
+use std::features;
+use std::signer;
+use std::vector;
+use aptos_std::pool_u64::{Self, Pool};
+use aptos_std::simple_map::{Self, SimpleMap};
+use aptos_framework::account::{Self, SignerCapability};
+use aptos_framework::aptos_account;
+use aptos_framework::aptos_coin::AptosCoin;
+use aptos_framework::coin::{Self, Coin};
+use aptos_framework::event::{EventHandle, emit};
+use aptos_framework::stake::{Self, OwnerCapability};
+use aptos_framework::staking_config;
+use aptos_framework::stake::with_rewards;
+
+// === constants ===
+const SALT: vector<u8> = b"aptos_framework::staking_contract";
+const EINSUFFICIENT_STAKE_AMOUNT: u64 = 1;
+const EINVALID_COMMISSION_PERCENTAGE: u64 = 2;
+const ENO_STAKING_CONTRACT_FOUND_FOR_STAKER: u64 = 3;
+const ENO_STAKING_CONTRACT_FOUND_FOR_OPERATOR: u64 = 4;
+const ECANT_MERGE_STAKING_CONTRACTS: u64 = 5;
+const ESTAKING_CONTRACT_ALREADY_EXISTS: u64 = 6;
+const EINSUFFICIENT_ACTIVE_STAKE_TO_WITHDRAW: u64 = 7;
+const ENOT_STAKER_OR_OPERATOR_OR_BENEFICIARY: u64 = 8;
+const EOPERATOR_BENEFICIARY_CHANGE_NOT_SUPPORTED: u64 = 9;
+const MAXIMUM_PENDING_DISTRIBUTIONS: u64 = 20;
+const VALIDATOR_STATUS_ACTIVE: u64 = 2;
+const VALIDATOR_STATUS_INACTIVE: u64 = 4;
+const INITIAL_BALANCE: u64 = 100000000000000;
+const MAXIMUM_STAKE: u64 = 100000000000000000;
+
+// === structs ===
+struct StakingGroupContainer {}
+struct StakingContract has store {
+        // Recorded principal after the last commission distribution.
+        // This is only used to calculate the commission the operator should be receiving.
+        principal: u64,
+        pool_address: address,
+        // The stake pool's owner capability. This can be used to control funds in the stake pool.
+        owner_cap: OwnerCapability,
+        commission_percentage: u64,
+        // Current distributions, including operator commission withdrawals and staker's partial withdrawals.
+        distribution_pool: Pool,
+        // Just in case we need the SignerCap for stake pool account in the future.
+        signer_cap: SignerCapability
+    }
+struct Staker has key, copy, drop, store {
+        staker: address
+    }
+struct Store has key {
+        staking_contracts: SimpleMap<address, StakingContract>,
+
+        // Events.
+        create_staking_contract_events: EventHandle<CreateStakingContractEvent>,
+        update_voter_events: EventHandle<UpdateVoterEvent>,
+        reset_lockup_events: EventHandle<ResetLockupEvent>,
+        add_stake_events: EventHandle<AddStakeEvent>,
+        request_commission_events: EventHandle<RequestCommissionEvent>,
+        unlock_stake_events: EventHandle<UnlockStakeEvent>,
+        switch_operator_events: EventHandle<SwitchOperatorEvent>,
+        add_distribution_events: EventHandle<AddDistributionEvent>,
+        distribute_events: EventHandle<DistributeEvent>
+    }
+struct BeneficiaryForOperator has key {
+        beneficiary_for_operator: address
+    }
+struct UpdateCommissionEvent has drop, store {
+        staker: address,
+        operator: address,
+        old_commission_percentage: u64,
+        new_commission_percentage: u64
+    }
+struct UpdateCommission has drop, store {
+        staker: address,
+        operator: address,
+        old_commission_percentage: u64,
+        new_commission_percentage: u64
+    }
+struct StakingGroupUpdateCommissionEvent has key {
+        update_commission_events: EventHandle<UpdateCommissionEvent>
+    }
+struct CreateStakingContract has drop, store {
+        operator: address,
+        voter: address,
+        pool_address: address,
+        principal: u64,
+        commission_percentage: u64
+    }
+struct UpdateVoter has drop, store {
+        operator: address,
+        pool_address: address,
+        old_voter: address,
+        new_voter: address
+    }
+struct ResetLockup has drop, store {
+        operator: address,
+        pool_address: address
+    }
+struct AddStake has drop, store {
+        operator: address,
+        pool_address: address,
+        amount: u64
+    }
+struct RequestCommission has drop, store {
+        operator: address,
+        pool_address: address,
+        accumulated_rewards: u64,
+        commission_amount: u64
+    }
+struct UnlockStake has drop, store {
+        operator: address,
+        pool_address: address,
+        amount: u64,
+        commission_paid: u64
+    }
+struct SwitchOperator has drop, store {
+        old_operator: address,
+        new_operator: address,
+        pool_address: address
+    }
+struct AddDistribution has drop, store {
+        operator: address,
+        pool_address: address,
+        amount: u64
+    }
+struct Distribute has drop, store {
+        operator: address,
+        pool_address: address,
+        recipient: address,
+        amount: u64
+    }
+struct SetBeneficiaryForOperator has drop, store {
+        operator: address,
+        old_beneficiary: address,
+        new_beneficiary: address
+    }
+struct CreateStakingContractEvent has drop, store {
+        operator: address,
+        voter: address,
+        pool_address: address,
+        principal: u64,
+        commission_percentage: u64
+    }
+struct UpdateVoterEvent has drop, store {
+        operator: address,
+        pool_address: address,
+        old_voter: address,
+        new_voter: address
+    }
+struct ResetLockupEvent has drop, store {
+        operator: address,
+        pool_address: address
+    }
+struct AddStakeEvent has drop, store {
+        operator: address,
+        pool_address: address,
+        amount: u64
+    }
+struct RequestCommissionEvent has drop, store {
+        operator: address,
+        pool_address: address,
+        accumulated_rewards: u64,
+        commission_amount: u64
+    }
+struct UnlockStakeEvent has drop, store {
+        operator: address,
+        pool_address: address,
+        amount: u64,
+        commission_paid: u64
+    }
+struct SwitchOperatorEvent has drop, store {
+        old_operator: address,
+        new_operator: address,
+        pool_address: address
+    }
+struct AddDistributionEvent has drop, store {
+        operator: address,
+        pool_address: address,
+        amount: u64
+    }
+struct DistributeEvent has drop, store {
+        operator: address,
+        pool_address: address,
+        recipient: address,
+        amount: u64
+    }
+
+// === sibling function signatures (bodies omitted) ===
+    public fun stake_pool_address(staker: address, operator: address): address acquires Store;
+    public fun staker_address(pool_address: address): std::option::Option<address> acquires Staker;
+    public fun last_recorded_principal(
+        staker: address, operator: address
+    ): u64 acquires Store;
+    public fun commission_percentage(staker: address, operator: address): u64 acquires Store;
+    public fun staking_contract_amounts(
+        staker: address, operator: address
+    ): (u64, u64, u64) acquires Store;
+    public fun pending_distribution_counts(
+        staker: address, operator: address
+    ): u64 acquires Store;
+    public fun staking_contract_exists(
+        staker: address, operator: address
+    ): bool acquires Store;
+    public fun beneficiary_for_operator(operator: address): address acquires BeneficiaryForOperator;
+    public fun get_expected_stake_pool_address(
+        staker: address, operator: address, contract_creation_seed: vector<u8>
+    ): address;
+    public fun pending_attribution_snapshot(
+        staker: address, operator: address, account: address
+    ): u64;
+    public entry fun create_staking_contract(
+        staker: &signer,
+        operator: address,
+        voter: address,
+        amount: u64,
+        commission_percentage: u64,
+        // Optional seed used when creating the staking contract account.
+        contract_creation_seed: vector<u8>
+    ) acquires Store;
+    public fun create_staking_contract_with_coins(
+        staker: &signer,
+        operator: address,
+        voter: address,
+        coins: Coin<AptosCoin>,
+        commission_percentage: u64,
+        // Optional seed used when creating the staking contract account.
+        contract_creation_seed: vector<u8>
+    ): address acquires Store;
+    public entry fun add_stake(
+        staker: &signer, operator: address, amount: u64
+    ) acquires Store;
+    public entry fun reset_lockup(staker: &signer, operator: address) acquires Store;
+    public entry fun update_commision(
+        staker: &signer, operator: address, new_commission_percentage: u64
+    ) acquires Store, BeneficiaryForOperator;
+    public entry fun request_commission(
+        account: &signer, staker: address, operator: address
+    ) acquires Store, BeneficiaryForOperator;
+    fun request_commission_internal(
+        operator: address,
+        staking_contract: &mut StakingContract,
+    ): u64;
+    public entry fun unlock_stake(
+        staker: &signer, operator: address, amount: u64
+    ) acquires Store, BeneficiaryForOperator;
+    public entry fun unlock_rewards(
+        staker: &signer, operator: address
+    ) acquires Store, BeneficiaryForOperator;
+    public entry fun switch_operator_with_same_commission(
+        staker: &signer, old_operator: address, new_operator: address
+    ) acquires Store, BeneficiaryForOperator;
+    public entry fun switch_operator(
+        staker: &signer,
+        old_operator: address,
+        new_operator: address,
+        new_commission_percentage: u64
+    ) acquires Store, BeneficiaryForOperator;
+    public entry fun set_beneficiary_for_operator(
+        operator: &signer, new_beneficiary: address
+    ) acquires BeneficiaryForOperator;
+    public entry fun distribute(
+        staker: address, operator: address
+    ) acquires Store, BeneficiaryForOperator;
+    fun distribute_internal(
+        staker: address,
+        operator: address,
+        staking_contract: &mut StakingContract,
+    ) acquires BeneficiaryForOperator;
+    fun assert_staking_contract_exists(
+        staker: address, operator: address
+    ) acquires Store;
+    fun add_distribution(
+        operator: address,
+        staking_contract: &mut StakingContract,
+        recipient: address,
+        coins_amount: u64,
+    );
+    fun get_staking_contract_amounts_internal(
+        staking_contract: &StakingContract
+    ): (u64, u64, u64);
+    fun create_stake_pool(
+        staker: &signer,
+        operator: address,
+        voter: address,
+        contract_creation_seed: vector<u8>
+    ): (signer, SignerCapability, OwnerCapability);
+    fun update_distribution_pool(
+        distribution_pool: &mut Pool,
+        updated_total_coins: u64,
+        operator: address,
+        commission_percentage: u64
+    );
+    fun create_resource_account_seed(
+        staker: address, operator: address, contract_creation_seed: vector<u8>
+    ): vector<u8>;
+    fun new_staking_contracts_holder(staker: &signer): Store;
+    #[test_only]
+    public fun setup(
+        aptos_framework: &signer,
+        staker: &signer,
+        operator: &signer,
+        initial_balance: u64
+    );
+    #[test_only]
+    public fun setup_staking_contract(
+        aptos_framework: &signer,
+        staker: &signer,
+        operator: &signer,
+        amount: u64,
+        commission: u64
+    ) acquires Store;
+    #[test(aptos_framework = @0x1, staker = @0x123, operator = @0x234)]
+    public entry fun test_end_to_end(
+        aptos_framework: &signer, staker: &signer, operator: &signer
+    ) acquires Store, BeneficiaryForOperator, Staker;
+    #[test(aptos_framework = @0x1, staker = @0x123, operator = @0x234)]
+    public entry fun test_operator_cannot_request_same_commission_multiple_times(
+        aptos_framework: &signer, staker: &signer, operator: &signer
+    ) acquires Store, BeneficiaryForOperator;
+    #[test(aptos_framework = @0x1, staker = @0x123, operator = @0x234)]
+    public entry fun test_unlock_rewards(
+        aptos_framework: &signer, staker: &signer, operator: &signer
+    ) acquires Store, BeneficiaryForOperator;
+    #[test(aptos_framework = @0x1, staker = @0x123, operator = @0x234)]
+    #[expected_failure(abort_code = 0x80006, location = Self)]
+    public entry fun test_staker_cannot_create_same_staking_contract_multiple_times(
+        aptos_framework: &signer, staker: &signer, operator: &signer
+    ) acquires Store;
+    #[test(aptos_framework = @0x1, staker = @0x123, operator = @0x234)]
+    #[expected_failure(abort_code = 0x10002, location = Self)]
+    public entry fun test_staker_cannot_create_staking_contract_with_invalid_commission(
+        aptos_framework: &signer, staker: &signer, operator: &signer
+    ) acquires Store;
+    #[test(aptos_framework = @0x1, staker = @0x123, operator = @0x234)]
+    #[expected_failure(abort_code = 0x10001, location = Self)]
+    public entry fun test_staker_cannot_create_staking_contract_with_less_than_min_stake_required(
+        aptos_framework: &signer, staker: &signer, operator: &signer
+    ) acquires Store;
+    #[test(aptos_framework = @0x1, staker = @0x123, operator = @0x234)]
+    public entry fun test_update_voter(
+        aptos_framework: &signer, staker: &signer, operator: &signer
+    ) acquires Store;
+    #[test(aptos_framework = @0x1, staker = @0x123, operator = @0x234)]
+    public entry fun test_reset_lockup(
+        aptos_framework: &signer, staker: &signer, operator: &signer
+    ) acquires Store;
+    #[
+        test(
+            aptos_framework = @0x1,
+            staker = @0x123,
+            operator_1 = @0x234,
+            operator_2 = @0x345
+        )
+    ]
+    public entry fun test_staker_can_switch_operator(
+        aptos_framework: &signer,
+        staker: &signer,
+        operator_1: &signer,
+        operator_2: &signer
+    ) acquires Store, BeneficiaryForOperator;
+    #[
+        test(
+            aptos_framework = @0x1,
+            staker = @0x123,
+            operator_1 = @0x234,
+            operator_2 = @0x345
+        )
+    ]
+    public entry fun test_staker_can_switch_operator_with_same_commission(
+        aptos_framework: &signer,
+        staker: &signer,
+        operator_1: &signer,
+        operator_2: &signer
+    ) acquires Store, BeneficiaryForOperator;
+    #[
+        test(
+            aptos_framework = @0x1,
+            staker = @0x123,
+            operator1 = @0x234,
+            beneficiary = @0x345,
+            operator2 = @0x456
+        )
+    ]
+    public entry fun test_operator_can_set_beneficiary(
+        aptos_framework: &signer,
+        staker: &signer,
+        operator1: &signer,
+        beneficiary: &signer,
+        operator2: &signer
+    ) acquires Store, BeneficiaryForOperator;
+    #[test(aptos_framework = @0x1, staker = @0x123, operator = @0x234)]
+    public entry fun test_staker_can_withdraw_partial_stake(
+        aptos_framework: &signer, staker: &signer, operator: &signer
+    ) acquires Store, BeneficiaryForOperator;
+    #[test(aptos_framework = @0x1, staker = @0x123, operator = @0x234)]
+    public entry fun test_staker_can_withdraw_partial_stake_if_operator_never_joined_validator_set(
+        aptos_framework: &signer, staker: &signer, operator: &signer
+    ) acquires Store, BeneficiaryForOperator;
+    #[test(aptos_framework = @0x1, staker = @0x123, operator = @0x234)]
+    public entry fun test_multiple_distributions_added_before_distribute(
+        aptos_framework: &signer, staker: &signer, operator: &signer
+    ) acquires Store, BeneficiaryForOperator;
+    #[test(aptos_framework = @0x1, staker = @0x123, operator = @0x234)]
+    public entry fun test_update_commission(
+        aptos_framework: &signer, staker: &signer, operator: &signer
+    ) acquires Store, BeneficiaryForOperator;
+    #[
+        test(
+            staker = @0xe256f4f4e2986cada739e339895cf5585082ff247464cab8ec56eea726bd2263,
+            operator = @0x9f0a211d218b082987408f1e393afe1ba0c202c6d280f081399788d3360c7f09
+        )
+    ]
+    public entry fun test_get_expected_stake_pool_address(
+        staker: address, operator: address
+    );
+    #[test_only]
+    public fun assert_staking_contract(
+        staker: address,
+        operator: address,
+        principal: u64,
+        commission_percentage: u64
+    ) acquires Store;
+    #[test_only]
+    public fun assert_no_pending_distributions(
+        staker: address, operator: address
+    ) acquires Store;
+    #[test_only]
+    public fun assert_distribution(
+        staker: address,
+        operator: address,
+        recipient: address,
+        coins_amount: u64
+    ) acquires Store;

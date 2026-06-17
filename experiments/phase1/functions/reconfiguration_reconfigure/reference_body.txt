@@ -1,0 +1,46 @@
+
+        // Do not do anything if genesis has not finished.
+        if (chain_status::is_genesis()
+            || timestamp::now_microseconds() == 0
+            || !reconfiguration_enabled()) { return };
+
+        let config_ref = borrow_global_mut<Configuration>(@aptos_framework);
+        let current_time = timestamp::now_microseconds();
+
+        // Do not do anything if a reconfiguration event is already emitted within this transaction.
+        //
+        // This is OK because:
+        // - The time changes in every non-empty block
+        // - A block automatically ends after a transaction that emits a reconfiguration event, which is guaranteed by
+        //   VM spec that all transactions comming after a reconfiguration transaction will be returned as Retry
+        //   status.
+        // - Each transaction must emit at most one reconfiguration event
+        //
+        // Thus, this check ensures that a transaction that does multiple "reconfiguration required" actions emits only
+        // one reconfiguration event.
+        //
+        if (current_time == config_ref.last_reconfiguration_time) { return };
+
+        reconfiguration_state::on_reconfig_start();
+
+        // Call stake to compute the new validator set and distribute rewards and transaction fees.
+        stake::on_new_epoch();
+        storage_gas::on_reconfig();
+
+        assert!(
+            current_time > config_ref.last_reconfiguration_time,
+            error::invalid_state(EINVALID_BLOCK_TIME)
+        );
+        config_ref.last_reconfiguration_time = current_time;
+        spec {
+            assume config_ref.epoch + 1 <= MAX_U64;
+        };
+        config_ref.epoch += 1;
+
+        event::emit(NewEpoch { epoch: config_ref.epoch });
+        event::emit_event<NewEpochEvent>(
+            &mut config_ref.events,
+            NewEpochEvent { epoch: config_ref.epoch }
+        );
+
+        reconfiguration_state::on_reconfig_finish();

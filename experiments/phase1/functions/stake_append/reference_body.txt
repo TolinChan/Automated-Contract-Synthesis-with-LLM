@@ -1,0 +1,4 @@
+
+        while (!v2.is_empty()) {
+            v1.push_back(v2.pop_back());
+        }

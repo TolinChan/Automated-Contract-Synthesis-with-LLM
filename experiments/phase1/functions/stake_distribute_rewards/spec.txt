@@ -1,0 +1,34 @@
+
+    spec distribute_rewards {
+        pragma aborts_if_is_partial;
+        include ResourceRequirement;
+        requires rewards_rate <= MAX_REWARDS_RATE;
+        requires rewards_rate_denominator > 0;
+        requires rewards_rate <= rewards_rate_denominator;
+        requires num_successful_proposals <= num_total_proposals;
+
+        include DistributeRewardsAbortsIf;
+
+        ensures old(stake.value) > 0 ==>
+            result
+                == spec_rewards_amount(
+                    old(stake.value),
+                    num_successful_proposals,
+                    num_total_proposals,
+                    rewards_rate,
+                    rewards_rate_denominator
+                );
+        ensures old(stake.value) > 0 ==>
+            stake.value
+                == old(stake.value)
+                    + spec_rewards_amount(
+                        old(stake.value),
+                        num_successful_proposals,
+                        num_total_proposals,
+                        rewards_rate,
+                        rewards_rate_denominator
+                    );
+        ensures old(stake.value) == 0 ==> result == 0;
+        ensures old(stake.value) == 0 ==>
+            stake.value == old(stake.value);
+    }

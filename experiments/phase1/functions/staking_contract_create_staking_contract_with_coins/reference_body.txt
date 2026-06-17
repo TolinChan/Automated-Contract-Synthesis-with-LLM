@@ -1,0 +1,72 @@
+
+        assert!(
+            commission_percentage >= 0 && commission_percentage <= 100,
+            error::invalid_argument(EINVALID_COMMISSION_PERCENTAGE)
+        );
+        // The amount should be at least the min_stake_required, so the stake pool will be eligible to join the
+        // validator set.
+        let (min_stake_required, _) =
+            staking_config::get_required_stake(&staking_config::get());
+        let principal = coin::value(&coins);
+        assert!(
+            principal >= min_stake_required,
+            error::invalid_argument(EINSUFFICIENT_STAKE_AMOUNT)
+        );
+
+        // Initialize Store resource if this is the first time the staker has delegated to anyone.
+        let staker_address = signer::address_of(staker);
+        if (!exists<Store>(staker_address)) {
+            move_to(staker, new_staking_contracts_holder(staker));
+        };
+
+        // Cannot create the staking contract if it already exists.
+        let store = borrow_global_mut<Store>(staker_address);
+        let staking_contracts = &mut store.staking_contracts;
+        assert!(
+            !staking_contracts.contains_key(&operator),
+            error::already_exists(ESTAKING_CONTRACT_ALREADY_EXISTS)
+        );
+
+        // Initialize the stake pool in a new resource account. This allows the same staker to contract with multiple
+        // different operators.
+        let (stake_pool_signer, stake_pool_signer_cap, owner_cap) =
+            create_stake_pool(
+                staker,
+                operator,
+                voter,
+                contract_creation_seed
+            );
+
+        // Add the stake to the stake pool.
+        stake::add_stake_with_cap(&owner_cap, coins);
+
+        // Create the staker record.
+        move_to(&stake_pool_signer, Staker { staker: staker_address });
+
+        // Create the contract record.
+        let pool_address = signer::address_of(&stake_pool_signer);
+        staking_contracts.add(
+            operator,
+            StakingContract {
+                principal,
+                pool_address,
+                owner_cap,
+                commission_percentage,
+                // Make sure we don't have too many pending recipients in the distribution pool.
+                // Otherwise, a griefing attack is possible where the staker can keep switching operators and create too
+                // many pending distributions. This can lead to out-of-gas failure whenever distribute() is called.
+                distribution_pool: pool_u64::create(MAXIMUM_PENDING_DISTRIBUTIONS),
+                signer_cap: stake_pool_signer_cap
+            }
+        );
+
+        emit(
+            CreateStakingContract {
+                operator,
+                voter,
+                pool_address,
+                principal,
+                commission_percentage
+            }
+        );
+        pool_address

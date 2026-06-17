@@ -1,0 +1,5 @@
+    fun emit_new_block_event(
+        vm: &signer,
+        event_handle: &mut EventHandle<NewBlockEvent>,
+        new_block_event: NewBlockEvent
+    ) acquires CommitHistory {

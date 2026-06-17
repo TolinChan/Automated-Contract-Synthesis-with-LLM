@@ -1,0 +1,1 @@
+    public(friend) fun create(addr: address, creation_num_ref: &mut u64): GUID {

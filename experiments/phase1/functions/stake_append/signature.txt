@@ -1,0 +1,1 @@
+    fun append<T>(v1: &mut vector<T>, v2: &mut vector<T>) {

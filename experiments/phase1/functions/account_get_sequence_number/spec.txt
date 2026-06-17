@@ -1,0 +1,5 @@
+
+    spec get_sequence_number(addr: address): u64 {
+        aborts_if !exists<Account>(addr);
+        ensures result == global<Account>(addr).sequence_number;
+    }

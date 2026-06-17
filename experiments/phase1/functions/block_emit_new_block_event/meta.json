@@ -1,0 +1,16 @@
+{
+  "id": "block_emit_new_block_event",
+  "module": "aptos_framework::block",
+  "function": "emit_new_block_event",
+  "source_file": "block.move",
+  "spec_file": "block.spec.move",
+  "complexity": "l3_medium",
+  "source_line_range": [
+    312,
+    337
+  ],
+  "body_chars": 953,
+  "body_lines": 22,
+  "spec_chars": 610,
+  "module_context_chars": 5066
+}

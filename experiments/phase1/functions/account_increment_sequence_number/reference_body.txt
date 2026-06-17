@@ -1,0 +1,10 @@
+
+        ensure_resource_exists(addr);
+        let sequence_number = &mut Account[addr].sequence_number;
+
+        assert!(
+            (*sequence_number as u128) < MAX_U64,
+            error::out_of_range(ESEQUENCE_NUMBER_TOO_BIG)
+        );
+
+        *sequence_number += 1;

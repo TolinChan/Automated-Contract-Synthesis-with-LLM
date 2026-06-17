@@ -1,0 +1,16 @@
+{
+  "id": "stake_distribute_rewards",
+  "module": "aptos_framework::stake",
+  "function": "distribute_rewards",
+  "source_file": "stake.move",
+  "spec_file": "stake.spec.move",
+  "complexity": "l3_medium",
+  "source_line_range": [
+    1945,
+    1970
+  ],
+  "body_chars": 685,
+  "body_lines": 20,
+  "spec_chars": 1234,
+  "module_context_chars": 39666
+}

@@ -1,0 +1,1 @@
+    public(friend) fun initialize(aptos_framework: &signer, id: u8) {

@@ -1,0 +1,16 @@
+{
+  "id": "stake_next_validator_consensus_infos",
+  "module": "aptos_framework::stake",
+  "function": "next_validator_consensus_infos",
+  "source_file": "stake.move",
+  "spec_file": "stake.spec.move",
+  "complexity": "l4_complex",
+  "source_line_range": [
+    1595,
+    1694
+  ],
+  "body_chars": 4581,
+  "body_lines": 100,
+  "spec_chars": 409,
+  "module_context_chars": 39759
+}

@@ -1,0 +1,18 @@
+
+        assert!(
+            exists<StorageGasConfig>(@aptos_framework),
+            error::not_found(ESTORAGE_GAS_CONFIG)
+        );
+        assert!(
+            exists<StorageGas>(@aptos_framework),
+            error::not_found(ESTORAGE_GAS)
+        );
+        let (items, bytes) = state_storage::current_items_and_bytes();
+        let gas_config = borrow_global<StorageGasConfig>(@aptos_framework);
+        let gas = borrow_global_mut<StorageGas>(@aptos_framework);
+        gas.per_item_read = calculate_read_gas(&gas_config.item_config, items);
+        gas.per_item_create = calculate_create_gas(&gas_config.item_config, items);
+        gas.per_item_write = calculate_write_gas(&gas_config.item_config, items);
+        gas.per_byte_read = calculate_read_gas(&gas_config.byte_config, bytes);
+        gas.per_byte_create = calculate_create_gas(&gas_config.byte_config, bytes);
+        gas.per_byte_write = calculate_write_gas(&gas_config.byte_config, bytes);

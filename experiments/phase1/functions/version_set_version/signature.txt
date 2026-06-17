@@ -1,0 +1,1 @@
+    public entry fun set_version(account: &signer, major: u64) acquires Version {

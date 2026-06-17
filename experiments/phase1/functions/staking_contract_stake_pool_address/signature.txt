@@ -1,0 +1,1 @@
+    public fun stake_pool_address(staker: address, operator: address): address acquires Store {

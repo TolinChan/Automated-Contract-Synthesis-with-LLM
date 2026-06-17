@@ -1,0 +1,10 @@
+spec { update ghost_proposer_idx = proposer_index; };
+let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+let validators = &mut validator_perf.validators;
+if (option::is_some(&proposer_index)) {
+    let idx = *option::borrow(&proposer_index);
+    if (idx < vector::length(validators)) {
+        let validator = vector::borrow_mut(validators, idx);
+        validator.successful_proposals = validator.successful_proposals + 1;
+    };
+};

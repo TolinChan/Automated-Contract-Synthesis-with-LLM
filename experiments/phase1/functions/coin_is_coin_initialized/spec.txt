@@ -1,0 +1,5 @@
+
+    spec is_coin_initialized<CoinType>(): bool {
+        /// [high-level-req-7.1]
+        aborts_if false;
+    }

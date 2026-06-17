@@ -1,0 +1,16 @@
+{
+  "id": "fungible_asset_unchecked_deposit",
+  "module": "aptos_framework::fungible_asset",
+  "function": "unchecked_deposit",
+  "source_file": "fungible_asset.move",
+  "spec_file": "fungible_asset.spec.move",
+  "complexity": "l3_medium",
+  "source_line_range": [
+    1280,
+    1287
+  ],
+  "body_chars": 184,
+  "body_lines": 6,
+  "spec_chars": 151,
+  "module_context_chars": 20855
+}

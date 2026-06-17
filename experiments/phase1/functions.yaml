@@ -1,0 +1,293 @@
+functions:
+  # ── L1 Trivial (6 functions) ──
+  - id: chain_id_get
+    module: aptos_framework::chain_id
+    function: get
+    source_file: chain_id.move
+    spec_file: chain_id.spec.move
+    complexity: l1_trivial
+    notes: "1-line body; 1 aborts_if. Floor case. feas_run_02 verified."
+
+  - id: guid_id
+    module: aptos_framework::guid
+    function: id
+    source_file: guid.move
+    spec_file: guid.spec.move
+    complexity: l1_trivial
+    notes: "Pure read; no abort."
+
+  - id: guid_creator_address
+    module: aptos_framework::guid
+    function: creator_address
+    source_file: guid.move
+    spec_file: guid.spec.move
+    complexity: l1_trivial
+    notes: "Pure read; no abort."
+
+  - id: guid_eq_id
+    module: aptos_framework::guid
+    function: eq_id
+    source_file: guid.move
+    spec_file: guid.spec.move
+    complexity: l1_trivial
+    notes: "Pure read; no abort."
+
+  - id: coin_is_coin_initialized
+    module: aptos_framework::coin
+    function: is_coin_initialized
+    source_file: coin.move
+    spec_file: coin.spec.move
+    complexity: l1_trivial
+    notes: "Pure read; no abort."
+
+  - id: coin_is_account_registered
+    module: aptos_framework::coin
+    function: is_account_registered
+    source_file: coin.move
+    spec_file: coin.spec.move
+    complexity: l1_trivial
+    notes: "Pure read; no abort."
+
+  # ── L2 Simple (8 functions) ──
+  - id: chain_id_initialize
+    module: aptos_framework::chain_id
+    function: initialize
+    source_file: chain_id.move
+    spec_file: chain_id.spec.move
+    complexity: l2_simple
+    notes: "Resource creation: assert + move_to. 2 aborts_if + 2 ensures. feas_run_02 verified."
+
+  - id: guid_create
+    module: aptos_framework::guid
+    function: create
+    source_file: guid.move
+    spec_file: guid.spec.move
+    complexity: l2_simple
+    notes: "aborts_if + ensures + MAX_U64 overflow. MSG paper AIO failure case."
+
+  - id: version_initialize
+    module: aptos_framework::version
+    function: initialize
+    source_file: configs/version.move
+    spec_file: configs/version.spec.move
+    complexity: l2_simple
+    notes: "Multiple aborts_if + ensures."
+
+  - id: account_get_sequence_number
+    module: aptos_framework::account
+    function: get_sequence_number
+    source_file: account/account.move
+    spec_file: account/account.spec.move
+    complexity: l2_simple
+    notes: "aborts_if !exists<Account> + ensures."
+
+  - id: account_create_account_if_does_not_exist
+    module: aptos_framework::account
+    function: create_account_if_does_not_exist
+    source_file: account/account.move
+    spec_file: account/account.spec.move
+    complexity: l2_simple
+    notes: "modifies + aborts_if (multi-condition) + ensures."
+
+  - id: account_create_account
+    module: aptos_framework::account
+    function: create_account
+    source_file: account/account.move
+    spec_file: account/account.spec.move
+    complexity: l2_simple
+    notes: "include schema + aborts_if."
+
+  - id: coin_merge
+    module: aptos_framework::coin
+    function: merge
+    source_file: coin.move
+    spec_file: coin.spec.move
+    complexity: l2_simple
+    notes: "ensures + old(); no aborts_if but involves state change."
+
+  - id: staking_contract_stake_pool_address
+    module: aptos_framework::staking_contract
+    function: stake_pool_address
+    source_file: staking_contract.move
+    spec_file: staking_contract.spec.move
+    complexity: l2_simple
+    notes: "aborts_if + ensures."
+
+  # ── L3 Medium (8 functions) ──
+  - id: coin_extract
+    module: aptos_framework::coin
+    function: extract
+    source_file: coin.move
+    spec_file: coin.spec.move
+    complexity: l3_medium
+    notes: "Generic; reference manipulation; arithmetic. Has inline spec { update supply<...> } blocks. feas_run_02 verified."
+
+  - id: block_initialize
+    module: aptos_framework::block
+    function: initialize
+    source_file: block.move
+    spec_file: block.spec.move
+    complexity: l3_medium
+    notes: "Multi-resource init; struct construction; spec uses schema includes. feas_run_02 verified."
+
+  - id: version_set_version
+    module: aptos_framework::version
+    function: set_version
+    source_file: configs/version.move
+    spec_file: configs/version.spec.move
+    complexity: l3_medium
+    notes: "requires + multiple aborts_if + ensures + references external schema."
+
+  - id: account_increment_sequence_number
+    module: aptos_framework::account
+    function: increment_sequence_number
+    source_file: account/account.move
+    spec_file: account/account.spec.move
+    complexity: l3_medium
+    notes: "modifies + aborts_if + MAX_U64 + ensures."
+
+  - id: staking_contract_update_voter
+    module: aptos_framework::staking_contract
+    function: update_voter
+    source_file: staking_contract.move
+    spec_file: staking_contract.spec.move
+    complexity: l3_medium
+    notes: "include UpdateVoterSchema + ensures."
+
+  - id: staking_contract_create_staking_contract
+    module: aptos_framework::staking_contract
+    function: create_staking_contract
+    source_file: staking_contract.move
+    spec_file: staking_contract.spec.move
+    complexity: l3_medium
+    notes: "include multiple schema + verify_duration_estimate = 120."
+
+  - id: staking_contract_create_staking_contract_with_coins
+    module: aptos_framework::staking_contract
+    function: create_staking_contract_with_coins
+    source_file: staking_contract.move
+    spec_file: staking_contract.spec.move
+    complexity: l3_medium
+    notes: "include multiple schema."
+
+  - id: staking_contract_request_commission
+    module: aptos_framework::staking_contract
+    function: request_commission
+    source_file: staking_contract.move
+    spec_file: staking_contract.spec.move
+    complexity: l3_medium
+    notes: "include schema + ensures."
+
+  # ── L4 Complex (3 functions) ──
+  - id: stake_update_perf
+    module: aptos_framework::stake
+    function: update_performance_statistics
+    source_file: stake.move
+    spec_file: stake.spec.move
+    complexity: l4_complex
+    notes: "Option + while loop + ghost vars + loop invariant. feas_run_02 verified."
+
+  - id: staking_contract_add_stake
+    module: aptos_framework::staking_contract
+    function: add_stake
+    source_file: staking_contract.move
+    spec_file: staking_contract.spec.move
+    complexity: l4_complex
+    notes: "verify_duration_estimate = 600, include 4+ schema, complex postcondition."
+
+  # Hard Expansion Pack v1 (12 functions): statically selected before looking at model outcomes.
+  - id: reconfiguration_reconfigure
+    module: aptos_framework::reconfiguration
+    function: reconfigure
+    source_file: reconfiguration.move
+    spec_file: reconfiguration.spec.move
+    complexity: l4_complex
+    notes: "Hard expansion static criteria: old(), global resource reasoning, resource mutation, multiple ensures, verify_duration_estimate=600."
+
+  - id: stake_update_stake_pool
+    module: aptos_framework::stake
+    function: update_stake_pool
+    source_file: stake.move
+    spec_file: stake.spec.move
+    complexity: l4_complex
+    notes: "Hard expansion static criteria: global resource reasoning, quantifier, resource mutation, multiple ensures, verify_duration_estimate=300."
+
+  - id: stake_append
+    module: aptos_framework::stake
+    function: append
+    source_file: stake.move
+    spec_file: stake.spec.move
+    complexity: l4_complex
+    notes: "Hard expansion static criteria: old(), quantifier, vector operation, multiple ensures."
+
+  - id: stake_remove_validators
+    module: aptos_framework::stake
+    function: remove_validators
+    source_file: stake.move
+    spec_file: stake.spec.move
+    complexity: l3_medium
+    notes: "Hard expansion static criteria: global resource reasoning, vector operation, resource mutation."
+
+  - id: stake_distribute_rewards
+    module: aptos_framework::stake
+    function: distribute_rewards
+    source_file: stake.move
+    spec_file: stake.spec.move
+    complexity: l3_medium
+    notes: "Hard expansion static criteria: old(), multiple ensures."
+
+  - id: coin_mint_internal
+    module: aptos_framework::coin
+    function: mint_internal
+    source_file: coin.move
+    spec_file: coin.spec.move
+    complexity: l4_complex
+    notes: "Hard expansion static criteria: modifies, old(), global resource reasoning, quantifier, resource mutation, multiple ensures."
+
+  - id: storage_gas_on_reconfig
+    module: aptos_framework::storage_gas
+    function: on_reconfig
+    source_file: storage_gas.move
+    spec_file: storage_gas.spec.move
+    complexity: l3_medium
+    notes: "Hard expansion static criteria: quantifier, resource mutation, multiple aborts_if."
+
+  - id: stake_next_validator_consensus_infos
+    module: aptos_framework::stake
+    function: next_validator_consensus_infos
+    source_file: stake.move
+    spec_file: stake.spec.move
+    complexity: l4_complex
+    notes: "Hard expansion static criteria: quantifier, vector operation, verify_duration_estimate=300."
+
+  - id: fungible_asset_unchecked_withdraw
+    module: aptos_framework::fungible_asset
+    function: unchecked_withdraw
+    source_file: fungible_asset.move
+    spec_file: fungible_asset.spec.move
+    complexity: l3_medium
+    notes: "Hard expansion static criteria: modifies, global resource reasoning."
+
+  - id: fungible_asset_unchecked_deposit
+    module: aptos_framework::fungible_asset
+    function: unchecked_deposit
+    source_file: fungible_asset.move
+    spec_file: fungible_asset.spec.move
+    complexity: l3_medium
+    notes: "Hard expansion static criteria: modifies, global resource reasoning."
+
+  - id: block_block_prologue_common
+    module: aptos_framework::block
+    function: block_prologue_common
+    source_file: block.move
+    spec_file: block.spec.move
+    complexity: l4_complex
+    notes: "Hard expansion static criteria: resource mutation, verify_duration_estimate=1000."
+
+  - id: block_emit_new_block_event
+    module: aptos_framework::block
+    function: emit_new_block_event
+    source_file: block.move
+    spec_file: block.spec.move
+    complexity: l3_medium
+    notes: "Hard expansion static criteria: quantifier, resource mutation."

@@ -1,0 +1,4 @@
+
+        assert_staking_contract_exists(staker, operator);
+        let staking_contracts = &borrow_global<Store>(staker).staking_contracts;
+        staking_contracts.borrow(&operator).pool_address

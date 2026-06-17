@@ -1,0 +1,22 @@
+CATEGORY: ghost_var_missing
+
+ROOT_CAUSE: The `ensures` clause references the module-level ghost variable `ghost_proposer_idx`, but the function body never binds this ghost variable to the runtime parameter `proposer_index`. Because the ghost variable remains unconstrained, the solver must reason over all possible values and times out instead of discharging the VC.
+
+FIX_INSTRUCTION: Add a spec-update block at the very beginning of the function body to bind `ghost_proposer_idx` to `proposer_index`, and prefix the unused parameter with an underscore to eliminate the warning:
+
+```move
+public(friend) fun update_performance_statistics(
+    proposer_index: Option<u64>, _failed_proposer_indices: vector<u64>
+) acquires ValidatorPerformance {
+    spec { update ghost_proposer_idx = proposer_index; };
+    let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+    let validators = &mut validator_perf.validators;
+    if (option::is_some(&proposer_index)) {
+        let idx = *option::borrow(&proposer_index);
+        if (idx < vector::length(validators)) {
+            let validator = vector::borrow_mut(validators, idx);
+            validator.successful_proposals = validator.successful_proposals + 1;
+        };
+    };
+}
+```

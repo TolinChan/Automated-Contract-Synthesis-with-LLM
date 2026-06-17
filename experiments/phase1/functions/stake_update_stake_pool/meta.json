@@ -1,0 +1,16 @@
+{
+  "id": "stake_update_stake_pool",
+  "module": "aptos_framework::stake",
+  "function": "update_stake_pool",
+  "source_file": "stake.move",
+  "spec_file": "stake.spec.move",
+  "complexity": "l4_complex",
+  "source_line_range": [
+    1799,
+    1906
+  ],
+  "body_chars": 4568,
+  "body_lines": 104,
+  "spec_chars": 2716,
+  "module_context_chars": 39657
+}

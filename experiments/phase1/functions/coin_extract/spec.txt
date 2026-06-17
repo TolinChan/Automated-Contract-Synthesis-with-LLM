@@ -1,0 +1,6 @@
+
+    spec extract<CoinType>(coin: &mut Coin<CoinType>, amount: u64): Coin<CoinType> {
+        aborts_if coin.value < amount;
+        ensures result.value == amount;
+        ensures coin.value == old(coin.value) - amount;
+    }

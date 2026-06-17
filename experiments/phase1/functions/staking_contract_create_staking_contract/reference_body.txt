@@ -1,0 +1,10 @@
+
+        let staked_coins = coin::withdraw<AptosCoin>(staker, amount);
+        create_staking_contract_with_coins(
+            staker,
+            operator,
+            voter,
+            staked_coins,
+            commission_percentage,
+            contract_creation_seed
+        );

@@ -1,0 +1,5 @@
+
+    spec eq_id(guid: &GUID, id: &ID): bool {
+        /// [high-level-req-2.7]
+        aborts_if false;
+    }

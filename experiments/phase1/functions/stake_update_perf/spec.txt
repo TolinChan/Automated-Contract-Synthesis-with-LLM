@@ -1,0 +1,20 @@
+
+    spec update_performance_statistics {
+        // This function is expected to be used after genesis.
+        requires chain_status::is_operating();
+        // This function should never abort.
+        aborts_if false;
+
+        let validator_perf = global<ValidatorPerformance>(@aptos_framework);
+        let post post_validator_perf = global<ValidatorPerformance>(@aptos_framework);
+        let validator_len = len(validator_perf.validators);
+        ensures (
+            option::is_some(ghost_proposer_idx)
+                && option::borrow(ghost_proposer_idx) < validator_len
+        ) ==>
+            (
+                post_validator_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals ==
+                validator_perf.validators[option::borrow(ghost_proposer_idx)].successful_proposals
+                + 1
+            );
+    }

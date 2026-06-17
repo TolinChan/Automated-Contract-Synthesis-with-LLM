@@ -1,0 +1,1 @@
+    public(friend) fun on_reconfig() acquires StorageGas, StorageGasConfig {

@@ -1,0 +1,14 @@
+
+    spec remove_validators {
+        requires chain_status::is_operating();
+        let validator_set = global<ValidatorSet>(@aptos_framework);
+        let post post_validator_set = global<ValidatorSet>(@aptos_framework);
+        let active_validators = validator_set.active_validators;
+        let post post_active_validators = post_validator_set.active_validators;
+        let pending_inactive_validators = validator_set.pending_inactive;
+        let post post_pending_inactive_validators = post_validator_set.pending_inactive;
+
+        invariant len(active_validators) > 0;
+        ensures len(active_validators) + len(pending_inactive_validators)
+            == len(post_active_validators) + len(post_pending_inactive_validators);
+    }

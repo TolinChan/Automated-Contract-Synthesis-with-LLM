@@ -1,0 +1,10 @@
+
+    spec next_validator_consensus_infos {
+        // TODO: set because of timeout (property proved)
+        pragma verify_duration_estimate = 300;
+        aborts_if false;
+        include ResourceRequirement;
+        include GetReconfigStartTimeRequirement;
+        include features::spec_periodical_reward_rate_decrease_enabled() ==>
+            staking_config::StakingRewardsConfigEnabledRequirement;
+    }

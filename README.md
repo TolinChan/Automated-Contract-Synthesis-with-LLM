@@ -10,13 +10,13 @@ MoVES 是一个面向 Aptos Move 的自动化合成系统，核心任务是 **Sp
 
 在 5 个 aptos-framework 函数上的可行性验证：
 
-| Baseline | 设置 | stake_update_perf 结果 | 整体通过率 |
+| Paper condition | 设置 | stake_update_perf 结果 | 整体通过率 |
 |---|---|---|---|
-| B1 | Zero-shot（签名 + Spec） | **FAIL** | 4/5 (80%) |
-| B3 | Zero-shot + 模块上下文 | **FAIL** | 4/5 (80%) |
-| B6 | 1 轮 generic feedback | **FAIL** | 4/5 |
-| B7 | 3 轮 generic feedback | **FAIL** | 4/5 |
-| Manual-diag | 手写结构化诊断 + 1 轮反馈 | **PASS (76.95 s)** | 5/5 |
+| Zero-shot (`b1`) | 签名 + Spec | **FAIL** | 4/5 (80%) |
+| +Ctx (`b3`) | 签名 + Spec + 模块上下文 | **FAIL** | 4/5 (80%) |
+| +Diag-1 (`b6`) | 1 轮 generic feedback | **FAIL** | 4/5 |
+| +Diag-3 (`b7`) | 3 轮 generic feedback | **FAIL** | 4/5 |
+| Oracle-Diag | 手写结构化诊断 + 1 轮反馈 | **PASS (76.95 s)** | 5/5 |
 
 关键结论：**codegen 能力足够，瓶颈在 diagnose**。零轮合成通过 80%，但失败的 `stake_update_perf`（含 ghost vars、while-loop invariants、overflow assumes 三个验证习语）无法被 generic feedback 修复；一旦提供手写结构化诊断，同一模型 1 轮即通过。
 
@@ -26,6 +26,10 @@ MoVES 是一个面向 Aptos Move 的自动化合成系统，核心任务是 **Sp
 - **GPT 5.5**：zero-shot 看似通过，但人工检查发现其**完全省略了 `failed_proposer_indices` 逻辑**，暴露 Pass@1 指标的系统性缺陷
 
 ## 仓库结构
+
+> Current formal Phase 1 runs should use `experiments/phase1/`.
+> `src/baseline_tasks/feasibility/` is kept as historical feasibility
+> infrastructure and evidence, not as the main entry point for new runs.
 
 ```
 .
@@ -86,12 +90,15 @@ $env:Z3_EXE     = "E:\tools\z3_extract\z3-4.13.0-x64-win\bin\z3.exe"
 ### 跑单个可行性验证
 
 ```powershell
-cd src\baseline_tasks\feasibility\scripts
-# B1 zero-shot
-python synth_b1.py --function stake_update_perf
+cd experiments\phase1\scripts
+# Zero-shot (internal artifact tag: b1)
+python synth_b1.py --provider deepseek --model deepseek-v4-pro --id stake_update_perf
 
-# B6 带 1 轮 generic feedback
-python synth_b6.py --function stake_update_perf
+# +Ctx (internal artifact tag: b3)
+python synth_b3.py --provider deepseek --model deepseek-v4-pro --id stake_update_perf
+
+# +Diag-1 (internal artifact tag: b6)
+python synth_loop.py --provider deepseek --model deepseek-v4-pro --feedback-rounds 1 --id stake_update_perf
 
 # 结果写入 results/<run_id>/<baseline>/<function>/
 ```

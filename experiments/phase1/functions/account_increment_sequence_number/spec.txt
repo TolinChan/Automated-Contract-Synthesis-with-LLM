@@ -1,0 +1,9 @@
+    spec increment_sequence_number(addr: address) {
+        let sequence_number = global<Account>(addr).sequence_number;
+        aborts_if !exists<Account>(addr);
+        /// [high-level-req-4]
+        aborts_if sequence_number == MAX_U64;
+        modifies global<Account>(addr);
+        let post post_sequence_number = global<Account>(addr).sequence_number;
+        ensures post_sequence_number == sequence_number + 1;
+    }

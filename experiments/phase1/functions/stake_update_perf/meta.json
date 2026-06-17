@@ -1,0 +1,16 @@
+{
+  "id": "stake_update_perf",
+  "module": "aptos_framework::stake",
+  "function": "update_performance_statistics",
+  "source_file": "stake.move",
+  "spec_file": "stake.spec.move",
+  "complexity": "l4_complex",
+  "source_line_range": [
+    1277,
+    1330
+  ],
+  "body_chars": 2326,
+  "body_lines": 52,
+  "spec_chars": 857,
+  "module_context_chars": 39747
+}

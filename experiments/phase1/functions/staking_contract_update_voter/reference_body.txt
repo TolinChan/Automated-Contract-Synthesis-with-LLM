@@ -1,0 +1,13 @@
+
+        let staker_address = signer::address_of(staker);
+        assert_staking_contract_exists(staker_address, operator);
+
+        let store = borrow_global_mut<Store>(staker_address);
+        let staking_contract = store.staking_contracts.borrow_mut(&operator);
+        let pool_address = staking_contract.pool_address;
+        let old_voter = stake::get_delegated_voter(pool_address);
+        stake::set_delegated_voter_with_cap(&staking_contract.owner_cap, new_voter);
+
+        emit(
+            UpdateVoter { operator, pool_address, old_voter, new_voter }
+        );

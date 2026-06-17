@@ -1,0 +1,5 @@
+
+        let amount = unchecked_deposit_with_no_events_inline(store_addr, fa);
+        if (amount != 0) {
+            event::emit(Deposit { store: store_addr, amount });
+        }

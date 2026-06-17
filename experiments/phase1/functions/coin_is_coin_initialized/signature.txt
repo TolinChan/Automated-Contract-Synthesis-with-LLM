@@ -1,0 +1,1 @@
+    public fun is_coin_initialized<CoinType>(): bool {

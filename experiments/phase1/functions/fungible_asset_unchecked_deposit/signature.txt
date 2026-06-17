@@ -1,0 +1,3 @@
+    public(friend) fun unchecked_deposit(
+        store_addr: address, fa: FungibleAsset
+    ) acquires FungibleStore, ConcurrentFungibleBalance {

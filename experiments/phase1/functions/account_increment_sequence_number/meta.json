@@ -1,0 +1,16 @@
+{
+  "id": "account_increment_sequence_number",
+  "module": "aptos_framework::account",
+  "function": "increment_sequence_number",
+  "source_file": "account/account.move",
+  "spec_file": "account/account.spec.move",
+  "complexity": "l3_medium",
+  "source_line_range": [
+    412,
+    422
+  ],
+  "body_chars": 278,
+  "body_lines": 11,
+  "spec_chars": 425,
+  "module_context_chars": 16699
+}

@@ -1,0 +1,1 @@
+    fun mint_internal<CoinType>(amount: u64): Coin<CoinType> acquires CoinInfo {

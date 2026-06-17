@@ -1,0 +1,7 @@
+    fun distribute_rewards(
+        stake: &mut Coin<AptosCoin>,
+        num_successful_proposals: u64,
+        num_total_proposals: u64,
+        rewards_rate: u64,
+        rewards_rate_denominator: u64
+    ): u64 acquires AptosCoinCapabilities {

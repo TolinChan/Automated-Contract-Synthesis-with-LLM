@@ -1,0 +1,103 @@
+
+        let stake_pool = borrow_global_mut<StakePool>(pool_address);
+        let validator_config = borrow_global<ValidatorConfig>(pool_address);
+        let validator_index = validator_config.validator_index;
+        let cur_validator_perf = validator_perf.validators.borrow(validator_index);
+        let num_successful_proposals = cur_validator_perf.successful_proposals;
+
+        let fee_pending_inactive = 0;
+        let fee_active = 0;
+        let fee_limit =
+            if (exists<TransactionFeeConfig>(@aptos_framework)) {
+                let TransactionFeeConfig::V0 { max_fee_octa_allowed_per_epoch_per_pool } =
+                    borrow_global<TransactionFeeConfig>(@aptos_framework);
+                *max_fee_octa_allowed_per_epoch_per_pool
+            } else {
+                MAX_U64 as u64
+            };
+
+        if (exists<PendingTransactionFee>(@aptos_framework)) {
+            let pending_fee_by_validator =
+                &mut borrow_global_mut<PendingTransactionFee>(@aptos_framework).pending_fee_by_validator;
+            if (pending_fee_by_validator.contains(&validator_index)) {
+                let fee_octa = pending_fee_by_validator.remove(&validator_index).read();
+                if (fee_octa > fee_limit) {
+                    fee_octa = fee_limit;
+                };
+                let stake_active = (coin::value(&stake_pool.active) as u128);
+                let stake_pending_inactive =
+                    (coin::value(&stake_pool.pending_inactive) as u128);
+                fee_pending_inactive =
+                    (
+                        ((fee_octa as u128) * stake_pending_inactive
+                            / (stake_active + stake_pending_inactive)) as u64
+                    );
+                fee_active = fee_octa - fee_pending_inactive;
+            }
+        };
+
+        spec {
+            // The following addition should not overflow because `num_total_proposals` cannot be larger than 86400,
+            // the maximum number of proposals in a day (1 proposal per second).
+            assume cur_validator_perf.successful_proposals
+                + cur_validator_perf.failed_proposals <= MAX_U64;
+        };
+        let num_total_proposals =
+            cur_validator_perf.successful_proposals
+                + cur_validator_perf.failed_proposals;
+        let (rewards_rate, rewards_rate_denominator) =
+            staking_config::get_reward_rate(staking_config);
+        let rewards_active =
+            distribute_rewards(
+                &mut stake_pool.active,
+                num_successful_proposals,
+                num_total_proposals,
+                rewards_rate,
+                rewards_rate_denominator
+            );
+        let rewards_pending_inactive =
+            distribute_rewards(
+                &mut stake_pool.pending_inactive,
+                num_successful_proposals,
+                num_total_proposals,
+                rewards_rate,
+                rewards_rate_denominator
+            );
+        spec {
+            assume rewards_active + rewards_pending_inactive <= MAX_U64;
+        };
+
+        if (std::features::is_distribute_transaction_fee_enabled()) {
+            let mint_cap =
+                &borrow_global<AptosCoinCapabilities>(@aptos_framework).mint_cap;
+            if (fee_active > 0) {
+                coin::merge(&mut stake_pool.active, coin::mint(fee_active, mint_cap));
+            };
+            if (fee_pending_inactive > 0) {
+                coin::merge(
+                    &mut stake_pool.pending_inactive,
+                    coin::mint(fee_pending_inactive, mint_cap)
+                );
+            };
+            let fee_amount = fee_active + fee_pending_inactive;
+            if (fee_amount > 0) {
+                event::emit(DistributeTransactionFee { pool_address, fee_amount });
+            };
+        };
+
+        let rewards_amount = rewards_active + rewards_pending_inactive;
+        // Pending active stake can now be active.
+        coin::merge(
+            &mut stake_pool.active, coin::extract_all(&mut stake_pool.pending_active)
+        );
+
+        // Pending inactive stake is only fully unlocked and moved into inactive if the current lockup cycle has expired
+        let current_lockup_expiration = stake_pool.locked_until_secs;
+        if (get_reconfig_start_time_secs() >= current_lockup_expiration) {
+            coin::merge(
+                &mut stake_pool.inactive,
+                coin::extract_all(&mut stake_pool.pending_inactive)
+            );
+        };
+
+        event::emit(DistributeRewards { pool_address, rewards_amount });

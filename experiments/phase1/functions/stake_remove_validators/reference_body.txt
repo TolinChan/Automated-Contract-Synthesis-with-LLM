@@ -1,0 +1,38 @@
+
+        assert_reconfig_not_in_progress();
+        system_addresses::assert_aptos_framework(aptos_framework);
+        let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
+        let active_validators = &mut validator_set.active_validators;
+        let pending_inactive = &mut validator_set.pending_inactive;
+        spec {
+            update ghost_active_num = len(active_validators);
+            update ghost_pending_inactive_num = len(pending_inactive);
+        };
+        let len_validators = validators.length();
+        let i = 0;
+        // Remove each validator from the validator set.
+        while ({
+            spec {
+                invariant i <= len_validators;
+                invariant spec_validators_are_initialized(active_validators);
+                invariant spec_validator_indices_are_valid(active_validators);
+                invariant spec_validators_are_initialized(pending_inactive);
+                invariant spec_validator_indices_are_valid(pending_inactive);
+                invariant ghost_active_num + ghost_pending_inactive_num
+                    == len(active_validators) + len(pending_inactive);
+            };
+            i < len_validators
+        }) {
+            let validator = validators[i];
+            let validator_index = find_validator(active_validators, validator);
+            if (validator_index.is_some()) {
+                let validator_info =
+                    active_validators.swap_remove(*validator_index.borrow());
+                pending_inactive.push_back(validator_info);
+                spec {
+                    update ghost_active_num = ghost_active_num - 1;
+                    update ghost_pending_inactive_num = ghost_pending_inactive_num + 1;
+                };
+            };
+            i += 1;
+        };

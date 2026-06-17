@@ -1,0 +1,10 @@
+
+        assert!(coin.value >= amount, error::invalid_argument(EINSUFFICIENT_BALANCE));
+        spec {
+            update supply<CoinType> = supply<CoinType> - amount;
+        };
+        coin.value -= amount;
+        spec {
+            update supply<CoinType> = supply<CoinType> + amount;
+        };
+        Coin { value: amount }

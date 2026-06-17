@@ -1,0 +1,16 @@
+{
+  "id": "coin_mint_internal",
+  "module": "aptos_framework::coin",
+  "function": "mint_internal",
+  "source_file": "coin.move",
+  "spec_file": "coin.spec.move",
+  "complexity": "l4_complex",
+  "source_line_range": [
+    1171,
+    1204
+  ],
+  "body_chars": 1335,
+  "body_lines": 34,
+  "spec_chars": 327,
+  "module_context_chars": 20355
+}

@@ -1,0 +1,15 @@
+
+    spec emit_new_block_event {
+        use aptos_framework::chain_status;
+        let proposer = new_block_event.proposer;
+        let timestamp = new_block_event.time_microseconds;
+
+        requires chain_status::is_operating();
+        requires system_addresses::is_vm(vm);
+        requires (proposer == @vm_reserved) ==> (timestamp::spec_now_microseconds() == timestamp);
+        requires (proposer != @vm_reserved) ==> (timestamp::spec_now_microseconds() < timestamp);
+        /// [high-level-req-5]
+        requires event::counter(event_handle) == new_block_event.height;
+
+        aborts_if false;
+    }

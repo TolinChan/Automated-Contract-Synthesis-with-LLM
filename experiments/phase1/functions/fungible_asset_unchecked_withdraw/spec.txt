@@ -1,0 +1,5 @@
+
+    spec unchecked_withdraw {
+        modifies global<FungibleStore>(store_addr);
+        modifies global<ConcurrentFungibleBalance>(store_addr);
+    }

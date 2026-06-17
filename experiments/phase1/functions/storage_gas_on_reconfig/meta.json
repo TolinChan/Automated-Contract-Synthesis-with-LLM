@@ -1,0 +1,16 @@
+{
+  "id": "storage_gas_on_reconfig",
+  "module": "aptos_framework::storage_gas",
+  "function": "on_reconfig",
+  "source_file": "storage_gas.move",
+  "spec_file": "storage_gas.spec.move",
+  "complexity": "l3_medium",
+  "source_line_range": [
+    516,
+    534
+  ],
+  "body_chars": 966,
+  "body_lines": 19,
+  "spec_chars": 317,
+  "module_context_chars": 3413
+}

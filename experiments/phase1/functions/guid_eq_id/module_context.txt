@@ -1,0 +1,27 @@
+
+// === friends ===
+friend aptos_framework::account;
+friend aptos_framework::object;
+
+// === constants ===
+const EGUID_GENERATOR_NOT_PUBLISHED: u64 = 0;
+
+// === structs ===
+struct GUID has drop, store {
+        id: ID
+    }
+struct ID has copy, drop, store {
+        /// If creation_num is `i`, this is the `i+1`th GUID created by `addr`
+        creation_num: u64,
+        /// Address that created the GUID
+        addr: address
+    }
+
+// === sibling function signatures (bodies omitted) ===
+    public(friend) fun create(addr: address, creation_num_ref: &mut u64): GUID;
+    public fun create_id(addr: address, creation_num: u64): ID;
+    public fun id(guid: &GUID): ID;
+    public fun creator_address(guid: &GUID): address;
+    public fun id_creator_address(id: &ID): address;
+    public fun creation_num(guid: &GUID): u64;
+    public fun id_creation_num(id: &ID): u64;

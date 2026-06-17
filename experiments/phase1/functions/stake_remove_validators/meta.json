@@ -1,0 +1,16 @@
+{
+  "id": "stake_remove_validators",
+  "module": "aptos_framework::stake",
+  "function": "remove_validators",
+  "source_file": "stake.move",
+  "spec_file": "stake.spec.move",
+  "complexity": "l3_medium",
+  "source_line_range": [
+    571,
+    611
+  ],
+  "body_chars": 1801,
+  "body_lines": 39,
+  "spec_chars": 741,
+  "module_context_chars": 39786
+}

@@ -1,0 +1,5 @@
+
+    spec id(guid: &GUID): ID {
+        /// [high-level-req-2.2]
+        aborts_if false;
+    }

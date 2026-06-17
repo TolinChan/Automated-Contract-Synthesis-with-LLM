@@ -1,0 +1,8 @@
+
+    spec stake_pool_address(staker: address, operator: address): address {
+        include ContractExistsAbortsIf;
+        let staking_contracts = global<Store>(staker).staking_contracts;
+        ensures result
+            == simple_map::spec_get(staking_contracts, operator).pool_address;
+
+    }

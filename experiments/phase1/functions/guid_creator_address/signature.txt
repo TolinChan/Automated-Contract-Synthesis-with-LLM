@@ -1,0 +1,1 @@
+    public fun creator_address(guid: &GUID): address {

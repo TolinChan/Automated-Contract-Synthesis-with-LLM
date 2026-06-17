@@ -1,0 +1,8 @@
+    spec request_commission(account: &signer, staker: address, operator: address) {
+        // TODO: Call `update_distribution_pool` and could not verify `update_distribution_pool`.
+        // TODO: A data invariant not hold happened here involve with 'pool_u64' #L16.
+        pragma verify = false;
+        let account_addr = signer::address_of(account);
+        include ContractExistsAbortsIf { staker };
+        aborts_if account_addr != staker && account_addr != operator;
+    }

@@ -1,0 +1,16 @@
+{
+  "id": "coin_merge",
+  "module": "aptos_framework::coin",
+  "function": "merge",
+  "source_file": "coin.move",
+  "spec_file": "coin.spec.move",
+  "complexity": "l2_simple",
+  "source_line_range": [
+    1081,
+    1095
+  ],
+  "body_chars": 364,
+  "body_lines": 13,
+  "spec_chars": 199,
+  "module_context_chars": 20329
+}

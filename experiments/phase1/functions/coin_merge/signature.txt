@@ -1,0 +1,3 @@
+    public fun merge<CoinType>(
+        dst_coin: &mut Coin<CoinType>, source_coin: Coin<CoinType>
+    ) {

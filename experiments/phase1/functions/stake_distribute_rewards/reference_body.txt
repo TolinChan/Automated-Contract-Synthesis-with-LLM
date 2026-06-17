@@ -1,0 +1,19 @@
+
+        let stake_amount = coin::value(stake);
+        let rewards_amount =
+            if (stake_amount > 0) {
+                calculate_rewards_amount(
+                    stake_amount,
+                    num_successful_proposals,
+                    num_total_proposals,
+                    rewards_rate,
+                    rewards_rate_denominator
+                )
+            } else { 0 };
+        if (rewards_amount > 0) {
+            let mint_cap =
+                &borrow_global<AptosCoinCapabilities>(@aptos_framework).mint_cap;
+            let rewards = coin::mint(rewards_amount, mint_cap);
+            coin::merge(stake, rewards);
+        };
+        rewards_amount

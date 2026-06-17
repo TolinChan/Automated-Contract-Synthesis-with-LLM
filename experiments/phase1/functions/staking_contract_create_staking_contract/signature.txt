@@ -1,0 +1,9 @@
+    public entry fun create_staking_contract(
+        staker: &signer,
+        operator: address,
+        voter: address,
+        amount: u64,
+        commission_percentage: u64,
+        // Optional seed used when creating the staking contract account.
+        contract_creation_seed: vector<u8>
+    ) acquires Store {

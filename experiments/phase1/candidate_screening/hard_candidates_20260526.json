@@ -1,0 +1,306 @@
+[
+  {
+    "id": "reconfiguration_reconfigure",
+    "module": "aptos_framework::reconfiguration",
+    "function": "reconfigure",
+    "source_file": "reconfiguration.move",
+    "spec_file": "reconfiguration.spec.move",
+    "tier": "primary",
+    "score": 15,
+    "features": [
+      "old",
+      "global_resource",
+      "resource_mutation",
+      "ensures=4",
+      "verify_duration_estimate=600"
+    ],
+    "reject_reasons": [],
+    "screen_passed": true,
+    "selected": true,
+    "selection_note": "selected_for_hard_expansion_v1"
+  },
+  {
+    "id": "stake_update_stake_pool",
+    "module": "aptos_framework::stake",
+    "function": "update_stake_pool",
+    "source_file": "stake.move",
+    "spec_file": "stake.spec.move",
+    "tier": "primary",
+    "score": 14,
+    "features": [
+      "global_resource",
+      "quantifier",
+      "resource_mutation",
+      "ensures=3",
+      "verify_duration_estimate=300"
+    ],
+    "reject_reasons": [],
+    "screen_passed": true,
+    "selected": true,
+    "selection_note": "selected_for_hard_expansion_v1"
+  },
+  {
+    "id": "stake_append",
+    "module": "aptos_framework::stake",
+    "function": "append",
+    "source_file": "stake.move",
+    "spec_file": "stake.spec.move",
+    "tier": "primary",
+    "score": 11,
+    "features": [
+      "old",
+      "quantifier",
+      "loop_or_vector",
+      "ensures=4"
+    ],
+    "reject_reasons": [],
+    "screen_passed": true,
+    "selected": true,
+    "selection_note": "selected_for_hard_expansion_v1"
+  },
+  {
+    "id": "stake_remove_validators",
+    "module": "aptos_framework::stake",
+    "function": "remove_validators",
+    "source_file": "stake.move",
+    "spec_file": "stake.spec.move",
+    "tier": "primary",
+    "score": 7,
+    "features": [
+      "global_resource",
+      "loop_or_vector",
+      "resource_mutation"
+    ],
+    "reject_reasons": [],
+    "screen_passed": true,
+    "selected": true,
+    "selection_note": "selected_for_hard_expansion_v1"
+  },
+  {
+    "id": "stake_distribute_rewards",
+    "module": "aptos_framework::stake",
+    "function": "distribute_rewards",
+    "source_file": "stake.move",
+    "spec_file": "stake.spec.move",
+    "tier": "primary",
+    "score": 6,
+    "features": [
+      "old",
+      "ensures=4"
+    ],
+    "reject_reasons": [],
+    "screen_passed": true,
+    "selected": true,
+    "selection_note": "selected_for_hard_expansion_v1"
+  },
+  {
+    "id": "coin_mint_internal",
+    "module": "aptos_framework::coin",
+    "function": "mint_internal",
+    "source_file": "coin.move",
+    "spec_file": "coin.spec.move",
+    "tier": "primary",
+    "score": 13,
+    "features": [
+      "modifies",
+      "old",
+      "global_resource",
+      "quantifier",
+      "resource_mutation",
+      "ensures=2"
+    ],
+    "reject_reasons": [],
+    "screen_passed": true,
+    "selected": true,
+    "selection_note": "selected_for_hard_expansion_v1"
+  },
+  {
+    "id": "storage_gas_on_reconfig",
+    "module": "aptos_framework::storage_gas",
+    "function": "on_reconfig",
+    "source_file": "storage_gas.move",
+    "spec_file": "storage_gas.spec.move",
+    "tier": "primary",
+    "score": 7,
+    "features": [
+      "quantifier",
+      "resource_mutation",
+      "aborts_if=3"
+    ],
+    "reject_reasons": [],
+    "screen_passed": true,
+    "selected": true,
+    "selection_note": "selected_for_hard_expansion_v1"
+  },
+  {
+    "id": "stake_next_validator_consensus_infos",
+    "module": "aptos_framework::stake",
+    "function": "next_validator_consensus_infos",
+    "source_file": "stake.move",
+    "spec_file": "stake.spec.move",
+    "tier": "primary",
+    "score": 10,
+    "features": [
+      "quantifier",
+      "loop_or_vector",
+      "verify_duration_estimate=300"
+    ],
+    "reject_reasons": [],
+    "screen_passed": true,
+    "selected": true,
+    "selection_note": "selected_for_hard_expansion_v1"
+  },
+  {
+    "id": "fungible_asset_unchecked_withdraw",
+    "module": "aptos_framework::fungible_asset",
+    "function": "unchecked_withdraw",
+    "source_file": "fungible_asset.move",
+    "spec_file": "fungible_asset.spec.move",
+    "tier": "primary",
+    "score": 5,
+    "features": [
+      "modifies",
+      "global_resource"
+    ],
+    "reject_reasons": [],
+    "screen_passed": true,
+    "selected": true,
+    "selection_note": "selected_for_hard_expansion_v1"
+  },
+  {
+    "id": "fungible_asset_unchecked_deposit",
+    "module": "aptos_framework::fungible_asset",
+    "function": "unchecked_deposit",
+    "source_file": "fungible_asset.move",
+    "spec_file": "fungible_asset.spec.move",
+    "tier": "primary",
+    "score": 5,
+    "features": [
+      "modifies",
+      "global_resource"
+    ],
+    "reject_reasons": [],
+    "screen_passed": true,
+    "selected": true,
+    "selection_note": "selected_for_hard_expansion_v1"
+  },
+  {
+    "id": "block_block_prologue_common",
+    "module": "aptos_framework::block",
+    "function": "block_prologue_common",
+    "source_file": "block.move",
+    "spec_file": "block.spec.move",
+    "tier": "primary",
+    "score": 7,
+    "features": [
+      "resource_mutation",
+      "verify_duration_estimate=1000"
+    ],
+    "reject_reasons": [],
+    "screen_passed": true,
+    "selected": true,
+    "selection_note": "selected_for_hard_expansion_v1"
+  },
+  {
+    "id": "block_emit_new_block_event",
+    "module": "aptos_framework::block",
+    "function": "emit_new_block_event",
+    "source_file": "block.move",
+    "spec_file": "block.spec.move",
+    "tier": "primary",
+    "score": 4,
+    "features": [
+      "quantifier",
+      "resource_mutation"
+    ],
+    "reject_reasons": [],
+    "screen_passed": true,
+    "selected": true,
+    "selection_note": "selected_for_hard_expansion_v1"
+  },
+  {
+    "id": "block_emit_genesis_block_event",
+    "module": "aptos_framework::block",
+    "function": "emit_genesis_block_event",
+    "source_file": "block.move",
+    "spec_file": "block.spec.move",
+    "tier": "backup",
+    "score": 7,
+    "features": [
+      "global_resource",
+      "loop_or_vector",
+      "resource_mutation"
+    ],
+    "reject_reasons": [],
+    "screen_passed": true,
+    "selected": false,
+    "selection_note": "backup_passed_not_needed"
+  },
+  {
+    "id": "aggregator_v2_string_concat",
+    "module": "aptos_framework::aggregator_v2",
+    "function": "string_concat",
+    "source_file": "aggregator_v2/aggregator_v2.move",
+    "spec_file": "aggregator_v2/aggregator_v2.spec.move",
+    "tier": "backup",
+    "score": 0,
+    "features": [],
+    "reject_reasons": [
+      "extract_error:ValueError:function 'string_concat' not found"
+    ],
+    "screen_passed": false,
+    "selected": false,
+    "selection_note": "rejected"
+  },
+  {
+    "id": "aggregator_v2_copy_snapshot",
+    "module": "aptos_framework::aggregator_v2",
+    "function": "copy_snapshot",
+    "source_file": "aggregator_v2/aggregator_v2.move",
+    "spec_file": "aggregator_v2/aggregator_v2.spec.move",
+    "tier": "backup",
+    "score": 0,
+    "features": [],
+    "reject_reasons": [
+      "extract_error:ValueError:function 'copy_snapshot' not found"
+    ],
+    "screen_passed": false,
+    "selected": false,
+    "selection_note": "rejected"
+  },
+  {
+    "id": "genesis_create_initialize_validators",
+    "module": "aptos_framework::genesis",
+    "function": "create_initialize_validators",
+    "source_file": "genesis.move",
+    "spec_file": "genesis.spec.move",
+    "tier": "backup",
+    "score": 6,
+    "features": [
+      "loop_or_vector",
+      "verify_duration_estimate=120"
+    ],
+    "reject_reasons": [],
+    "screen_passed": true,
+    "selected": false,
+    "selection_note": "backup_passed_not_needed"
+  },
+  {
+    "id": "object_grant_permission",
+    "module": "aptos_framework::object",
+    "function": "grant_permission",
+    "source_file": "object.move",
+    "spec_file": "object.spec.move",
+    "tier": "backup",
+    "score": 3,
+    "features": [
+      "aborts_if=3"
+    ],
+    "reject_reasons": [
+      "fewer_than_two_static_feature_classes"
+    ],
+    "screen_passed": false,
+    "selected": false,
+    "selection_note": "rejected"
+  }
+]

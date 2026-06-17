@@ -1,0 +1,16 @@
+{
+  "id": "reconfiguration_reconfigure",
+  "module": "aptos_framework::reconfiguration",
+  "function": "reconfigure",
+  "source_file": "reconfiguration.move",
+  "spec_file": "reconfiguration.spec.move",
+  "complexity": "l4_complex",
+  "source_line_range": [
+    110,
+    156
+  ],
+  "body_chars": 1924,
+  "body_lines": 47,
+  "spec_chars": 2122,
+  "module_context_chars": 2076
+}

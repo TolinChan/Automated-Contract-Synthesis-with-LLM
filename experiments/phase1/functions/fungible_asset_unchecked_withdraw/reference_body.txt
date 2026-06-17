@@ -1,0 +1,6 @@
+
+        let fa = unchecked_withdraw_with_no_events(store_addr, amount);
+        if (amount != 0) {
+            event::emit<Withdraw>(Withdraw { store: store_addr, amount });
+        };
+        fa

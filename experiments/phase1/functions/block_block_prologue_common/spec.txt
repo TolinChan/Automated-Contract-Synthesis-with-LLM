@@ -1,0 +1,6 @@
+
+    spec block_prologue_common {
+        pragma verify_duration_estimate = 1000; // TODO: set because of timeout (property proved)
+        include BlockRequirement;
+        aborts_if false;
+    }

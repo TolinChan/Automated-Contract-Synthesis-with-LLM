@@ -1,0 +1,3 @@
+    public fun remove_validators(
+        aptos_framework: &signer, validators: &vector<address>
+    ) acquires ValidatorSet {

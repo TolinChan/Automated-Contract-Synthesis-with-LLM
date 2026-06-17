@@ -1,0 +1,1 @@
+    public(friend) fun increment_sequence_number(addr: address) acquires Account {

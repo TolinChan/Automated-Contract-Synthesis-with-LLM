@@ -1,0 +1,7 @@
+    spec on_reconfig {
+        use aptos_framework::chain_status;
+        requires chain_status::is_operating();
+        aborts_if !exists<StorageGasConfig>(@aptos_framework);
+        aborts_if !exists<StorageGas>(@aptos_framework);
+        aborts_if !exists<state_storage::StateStorageUsage>(@aptos_framework);
+    }

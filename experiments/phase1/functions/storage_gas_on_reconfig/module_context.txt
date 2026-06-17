@@ -1,0 +1,83 @@
+// === imports ===
+use aptos_framework::system_addresses;
+use std::error;
+use aptos_framework::state_storage;
+use std::vector;
+
+// === friends ===
+friend aptos_framework::gas_schedule;
+friend aptos_framework::genesis;
+friend aptos_framework::reconfiguration;
+
+// === constants ===
+const ESTORAGE_GAS_CONFIG: u64 = 0;
+const ESTORAGE_GAS: u64 = 1;
+const EINVALID_GAS_RANGE: u64 = 2;
+const EZERO_TARGET_USAGE: u64 = 3;
+const ETARGET_USAGE_TOO_BIG: u64 = 4;
+const EINVALID_MONOTONICALLY_NON_DECREASING_CURVE: u64 = 5;
+const EINVALID_POINT_RANGE: u64 = 6;
+const BASIS_POINT_DENOMINATION: u64 = 10000;
+const MAX_U64: u64 = 18446744073709551615;
+
+// === structs ===
+struct StorageGas has key {
+        /// Cost to read an item from global storage.
+        per_item_read: u64,
+        /// Cost to create an item in global storage.
+        per_item_create: u64,
+        /// Cost to overwrite an item in global storage.
+        per_item_write: u64,
+        /// Cost to read a byte from global storage.
+        per_byte_read: u64,
+        /// Cost to create a byte in global storage.
+        per_byte_create: u64,
+        /// Cost to overwrite a byte in global storage.
+        per_byte_write: u64,
+    }
+struct Point has copy, drop, store {
+        /// x-coordinate basis points, corresponding to utilization
+        /// ratio in `base_8192_exponential_curve()`.
+        x: u64,
+        /// y-coordinate basis points, corresponding to utilization
+        /// multiplier in `base_8192_exponential_curve()`.
+        y: u64
+    }
+struct UsageGasConfig has copy, drop, store {
+        target_usage: u64,
+        read_curve: GasCurve,
+        create_curve: GasCurve,
+        write_curve: GasCurve,
+    }
+struct GasCurve has copy, drop, store {
+        min_gas: u64,
+        max_gas: u64,
+        points: vector<Point>,
+    }
+struct StorageGasConfig has copy, drop, key {
+        /// Per-item gas configuration.
+        item_config: UsageGasConfig,
+        /// Per-byte gas configuration.
+        byte_config: UsageGasConfig,
+    }
+
+// === sibling function signatures (bodies omitted) ===
+    public fun base_8192_exponential_curve(min_gas: u64, max_gas: u64): GasCurve;
+    public fun new_point(x: u64, y: u64): Point;
+    public fun new_gas_curve(min_gas: u64, max_gas: u64, points: vector<Point>): GasCurve;
+    public fun new_usage_gas_config(target_usage: u64, read_curve: GasCurve, create_curve: GasCurve, write_curve: GasCurve): UsageGasConfig;
+    public fun new_storage_gas_config(item_config: UsageGasConfig, byte_config: UsageGasConfig): StorageGasConfig;
+    public(friend) fun set_config(aptos_framework: &signer, config: StorageGasConfig) acquires StorageGasConfig;
+    public fun initialize(aptos_framework: &signer);
+    fun validate_points(points: &vector<Point>);
+    fun calculate_gas(max_usage: u64, current_usage: u64, curve: &GasCurve): u64;
+    fun interpolate(x0: u64, x1: u64, y0: u64, y1: u64, x: u64): u64;
+    fun calculate_read_gas(config: &UsageGasConfig, usage: u64): u64;
+    fun calculate_create_gas(config: &UsageGasConfig, usage: u64): u64;
+    fun calculate_write_gas(config: &UsageGasConfig, usage: u64): u64;
+    #[test_only]
+    fun test_initialize_and_reconfig(framework: signer) acquires StorageGas, StorageGasConfig;
+    #[test]
+    fun test_curve();
+    #[test(framework = @aptos_framework)]
+    fun test_set_storage_gas_config(framework: signer) acquires StorageGas, StorageGasConfig;
